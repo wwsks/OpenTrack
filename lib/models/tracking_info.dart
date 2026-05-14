@@ -2,6 +2,7 @@ class TrackingInfo {
   final String companyCode;
   final String trackingNumber;
   final String state;
+  final String ischeck;
   final String message;
   final List<TrackingEvent> data;
 
@@ -9,6 +10,7 @@ class TrackingInfo {
     required this.companyCode,
     required this.trackingNumber,
     required this.state,
+    required this.ischeck,
     required this.message,
     required this.data,
   });
@@ -18,6 +20,7 @@ class TrackingInfo {
       companyCode: json['com'] ?? '',
       trackingNumber: json['nu'] ?? '',
       state: json['state'] ?? '',
+      ischeck: json['ischeck'] ?? '0',
       message: json['message'] ?? '',
       data: (json['data'] as List<dynamic>?)
               ?.map((e) => TrackingEvent.fromJson(e))
@@ -27,7 +30,8 @@ class TrackingInfo {
   }
 
   /// 是否已签收
-  bool get isSigned => state == '3';
+  /// 优先判断 ischeck，其次判断 state
+  bool get isSigned => ischeck == '1' || state == '3';
 }
 
 class TrackingEvent {

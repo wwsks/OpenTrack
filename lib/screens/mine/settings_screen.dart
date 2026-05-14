@@ -120,10 +120,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               child: const Text('保存'),
             ),
 
-            // 高级设置部分
-            const SizedBox(height: 24),
-            _SectionTitle(title: '高级设置'),
-            const SizedBox(height: 8),
+            // 高级设置
+            const SizedBox(height: 16),
             Card(
               child: Column(
                 children: [
@@ -164,22 +162,3 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 }
 
-class _SectionTitle extends StatelessWidget {
-  final String title;
-  const _SectionTitle({required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4),
-      child: Text(
-        title,
-        style: TextStyle(
-          fontSize: 13,
-          color: Colors.grey.shade600,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-    );
-  }
-}
