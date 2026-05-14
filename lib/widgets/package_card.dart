@@ -30,25 +30,12 @@ class PackageCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            package.companyName,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 15,
-                            ),
-                          ),
-                        ),
-                        Text(
-                          _statusText(package.status),
-                          style: TextStyle(
-                            color: _statusColor(package.status),
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
+                    Text(
+                      package.companyName,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                      ),
                     ),
                     const SizedBox(height: 2),
                     Text(
@@ -100,16 +87,6 @@ class PackageCard extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  String _statusText(String status) {
-    if (status == '3') return '已签收';
-    return '未签收';
-  }
-
-  Color _statusColor(String status) {
-    if (status == '3') return Colors.green;
-    return Colors.orange;
   }
 
   String _formatTime(DateTime dt) {

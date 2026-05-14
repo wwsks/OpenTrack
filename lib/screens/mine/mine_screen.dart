@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../providers/settings_provider.dart';
 import 'settings_screen.dart';
+import 'advanced_settings_screen.dart';
 
 class MineScreen extends ConsumerWidget {
   const MineScreen({super.key});
@@ -41,6 +42,19 @@ class MineScreen extends ConsumerWidget {
             },
           ),
           const Divider(height: 1),
+          ListTile(
+            leading: const Icon(Icons.settings),
+            title: const Text('高级设置'),
+            subtitle: const Text('自动保存、自动清理'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const AdvancedSettingsScreen()),
+              );
+            },
+          ),
           _SectionTitle(title: '关于'),
           const ListTile(
             leading: Icon(Icons.info_outline),
@@ -74,29 +88,17 @@ class MineScreen extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('1. 访问快递100官网',
-                  style: TextStyle(fontWeight: FontWeight.bold)),
-              SizedBox(height: 4),
-              Text('https://www.kuaidi100.com/'),
+              Text('1. 百度搜索"快递100 API"，进入百递云 API 开放平台'),
               SizedBox(height: 12),
-              Text('2. 注册企业版账号',
-                  style: TextStyle(fontWeight: FontWeight.bold)),
-              SizedBox(height: 4),
-              Text('进入"企业版"或"API服务"页面，注册并登录'),
+              Text('2. 注册账号，企业名称随便填'),
               SizedBox(height: 12),
-              Text('3. 获取授权信息',
-                  style: TextStyle(fontWeight: FontWeight.bold)),
-              SizedBox(height: 4),
-              Text('在"控制台"或"API管理"页面找到：\n'
-                  '- 授权 Key（secret key）\n'
-                  '- Customer（客户编号）'),
+              Text('3. 登录进入企业管理后台'),
               SizedBox(height: 12),
-              Text('4. 填入本应用',
-                  style: TextStyle(fontWeight: FontWeight.bold)),
-              SizedBox(height: 4),
-              Text('回到"我的"页面，点击"API 配置"，填入 Key 和 Customer 即可使用'),
+              Text('4. 首页点击"实时查询与订阅推送"'),
               SizedBox(height: 12),
-              Text('注意：快递100企业版可能需要付费充值查询次数',
+              Text('5. 获取授权参数：授权 Key 和 Customer，填入本应用即可使用'),
+              SizedBox(height: 16),
+              Text('PS：新注册用户可获得免费 100 次查询次数',
                   style: TextStyle(color: Colors.orange, fontSize: 12)),
             ],
           ),
