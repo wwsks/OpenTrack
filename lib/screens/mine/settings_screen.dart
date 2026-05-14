@@ -55,14 +55,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final autoSave = ref.watch(autoSaveProvider);
+    final autoClean = ref.watch(autoCleanProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('API 配置')),
+      appBar: AppBar(title: const Text('设置')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // API 配置部分
             const Card(
               child: Padding(
                 padding: EdgeInsets.all(16),
@@ -82,7 +84,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
             TextField(
               controller: _keyController,
               decoration: InputDecoration(
@@ -99,7 +101,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
               obscureText: _obscureKey,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             TextField(
               controller: _customerController,
               decoration: const InputDecoration(
@@ -109,7 +111,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 prefixIcon: Icon(Icons.business),
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
             ElevatedButton(
               onPressed: _save,
               style: ElevatedButton.styleFrom(
@@ -117,22 +119,65 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
               child: const Text('保存'),
             ),
+
+            // 高级设置部分
             const SizedBox(height: 24),
-            const Divider(),
+            _SectionTitle(title: '高级设置'),
             const SizedBox(height: 8),
-            SwitchListTile(
-              title: const Text('查询后自动保存'),
-              subtitle: const Text('查询快递后自动添加到首页列表'),
-              value: autoSave,
-              onChanged: (value) {
-                ref.read(autoSaveProvider.notifier).set(value);
-              },
-              secondary: Icon(
-                autoSave ? Icons.save : Icons.save_outlined,
-                color: autoSave ? Colors.green : Colors.grey,
+            Card(
+              child: Column(
+                children: [
+                  SwitchListTile(
+                    title: const Text('查询后自动保存'),
+                    subtitle: const Text('查询快递后自动添加到首页列表'),
+                    value: autoSave,
+                    onChanged: (value) {
+                      ref.read(autoSaveProvider.notifier).set(value);
+                    },
+                    secondary: Icon(
+                      autoSave ? Icons.save : Icons.save_outlined,
+                      color: autoSave ? Colors.green : Colors.grey,
+                    ),
+                  ),
+                  const Divider(height: 1),
+                  SwitchListTile(
+                    title: const Text('30天自动清理'),
+                    subtitle: const Text('自动清除添加超过30天的快递记录'),
+                    value: autoClean,
+                    onChanged: (value) {
+                      ref.read(autoCleanProvider.notifier).set(value);
+                    },
+                    secondary: Icon(
+                      autoClean
+                          ? Icons.auto_delete
+                          : Icons.auto_delete_outlined,
+                      color: autoClean ? Colors.green : Colors.grey,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SectionTitle extends StatelessWidget {
+  final String title;
+  const _SectionTitle({required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Text(
+        title,
+        style: TextStyle(
+          fontSize: 13,
+          color: Colors.grey.shade600,
+          fontWeight: FontWeight.w500,
         ),
       ),
     );

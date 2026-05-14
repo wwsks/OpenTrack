@@ -4,14 +4,44 @@ import '../../models/package.dart';
 import '../../models/tracking_info.dart';
 import '../../providers/package_provider.dart';
 
-class DetailScreen extends ConsumerWidget {
+class DetailScreen extends ConsumerStatefulWidget {
   final Package package;
   final TrackingInfo? trackingInfo;
 
   const DetailScreen({super.key, required this.package, this.trackingInfo});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<DetailScreen> createState() => _DetailScreenState();
+}
+
+class _DetailScreenState extends ConsumerState<DetailScreen> {
+  TrackingInfo? _trackingInfo;
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _trackingInfo = widget.trackingInfo;
+    if (_trackingInfo == null) {
+      _fetchTrackingInfo();
+    }
+  }
+
+  Future<void> _fetchTrackingInfo() async {
+    setState(() => _isLoading = true);
+    final info = await ref
+        .read(allPackagesProvider.notifier)
+        .querySingle(widget.package);
+    if (mounted) {
+      setState(() {
+        _trackingInfo = info;
+        _isLoading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('快递详情'),
@@ -21,7 +51,8 @@ class DetailScreen extends ConsumerWidget {
             onPressed: () async {
               await ref
                   .read(allPackagesProvider.notifier)
-                  .refreshSingle(package);
+                  .refreshSingle(widget.package);
+              await _fetchTrackingInfo();
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('已刷新')),
@@ -36,15 +67,24 @@ class DetailScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _InfoCard(package: package),
+            _InfoCard(package: widget.package),
             const SizedBox(height: 16),
-            if (trackingInfo != null)
-              _TimelineCard(info: trackingInfo!)
-            else
+            if (_isLoading)
               const Card(
                 child: Padding(
                   padding: EdgeInsets.all(32),
                   child: Center(child: CircularProgressIndicator()),
+                ),
+              )
+            else if (_trackingInfo != null)
+              _TimelineCard(info: _trackingInfo!)
+            else
+              const Card(
+                child: Padding(
+                  padding: EdgeInsets.all(32),
+                  child: Center(
+                    child: Text('暂无轨迹信息', style: TextStyle(color: Colors.grey)),
+                  ),
                 ),
               ),
           ],
@@ -68,7 +108,7 @@ class _InfoCard extends StatelessWidget {
           children: [
             _infoRow('快递公司', package.companyName),
             _infoRow('快递单号', package.trackingNumber),
-            _infoRow('当前状态', _statusText(package.status)),
+            _infoRow('当前状态', package.isSigned ? '已签收' : '未签收'),
             if (package.remark != null && package.remark!.isNotEmpty)
               _infoRow('物品备注', package.remark!),
             _infoRow('添加时间', _formatDate(package.addedTime)),
@@ -96,27 +136,6 @@ class _InfoCard extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  String _statusText(String status) {
-    switch (status) {
-      case '0':
-        return '在途';
-      case '1':
-        return '揽收';
-      case '3':
-        return '已签收';
-      case '5':
-        return '派件中';
-      case '2':
-        return '疑难';
-      case '6':
-        return '退回';
-      case '8':
-        return '清关';
-      default:
-        return status;
-    }
   }
 
   String _formatDate(DateTime dt) {

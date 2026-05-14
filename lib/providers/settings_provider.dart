@@ -24,6 +24,10 @@ final autoSaveProvider = StateNotifierProvider<AutoSaveNotifier, bool>((ref) {
   return AutoSaveNotifier(ref.read(storageServiceProvider));
 });
 
+final autoCleanProvider = StateNotifierProvider<AutoCleanNotifier, bool>((ref) {
+  return AutoCleanNotifier(ref.read(storageServiceProvider));
+});
+
 class ApiKeyNotifier extends StateNotifier<String?> {
   final StorageService _storage;
   ApiKeyNotifier(this._storage) : super(null) {
@@ -68,6 +72,22 @@ class AutoSaveNotifier extends StateNotifier<bool> {
 
   Future<void> set(bool value) async {
     await _storage.setAutoSave(value);
+    state = value;
+  }
+}
+
+class AutoCleanNotifier extends StateNotifier<bool> {
+  final StorageService _storage;
+  AutoCleanNotifier(this._storage) : super(true) {
+    _load();
+  }
+
+  Future<void> _load() async {
+    state = await _storage.getAutoClean();
+  }
+
+  Future<void> set(bool value) async {
+    await _storage.setAutoClean(value);
     state = value;
   }
 }

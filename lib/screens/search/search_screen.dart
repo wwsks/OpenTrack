@@ -113,7 +113,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     final trackingNumber = _trackingController.text.trim();
     final companyName = _selectedCompany?.name ?? _getCompanyName(_result!.companyCode);
 
-    await ref.read(allPackagesProvider.notifier).addPackage(
+    final error = await ref.read(allPackagesProvider.notifier).addPackage(
           trackingNumber: trackingNumber,
           companyCode: _result!.companyCode,
           companyName: companyName,
@@ -127,9 +127,15 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         );
 
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('已添加到我的快递')),
-      );
+      if (error != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(error), backgroundColor: Colors.orange),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('已添加到我的快递')),
+        );
+      }
     }
   }
 

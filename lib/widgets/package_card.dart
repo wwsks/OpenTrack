@@ -103,39 +103,13 @@ class PackageCard extends StatelessWidget {
   }
 
   String _statusText(String status) {
-    switch (status) {
-      case '0':
-        return '在途';
-      case '1':
-        return '揽收';
-      case '3':
-        return '已签收';
-      case '5':
-        return '派件中';
-      case '2':
-        return '疑难';
-      case '6':
-        return '退回';
-      default:
-        return status;
-    }
+    if (status == '3') return '已签收';
+    return '未签收';
   }
 
   Color _statusColor(String status) {
-    switch (status) {
-      case '0':
-        return Colors.blue;
-      case '1':
-        return Colors.orange;
-      case '3':
-        return Colors.green;
-      case '5':
-        return Colors.purple;
-      case '2':
-        return Colors.red;
-      default:
-        return Colors.grey;
-    }
+    if (status == '3') return Colors.green;
+    return Colors.orange;
   }
 
   String _formatTime(DateTime dt) {

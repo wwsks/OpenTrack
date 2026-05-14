@@ -44,6 +44,16 @@ class StorageService {
     await prefs.setBool(AppConstants.keyAutoSave, value);
   }
 
+  Future<bool> getAutoClean() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(AppConstants.keyAutoClean) ?? true;
+  }
+
+  Future<void> setAutoClean(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(AppConstants.keyAutoClean, value);
+  }
+
   // --- Hive (快递数据) ---
 
   List<Package> getAllPackages() => _packageBox.values.toList();

@@ -28,6 +28,7 @@ class PackageListNotifier extends StateNotifier<List<Package>> {
   final Ref _ref;
   PackageListNotifier(this._ref) : super([]) {
     _load();
+    _cleanOldPackages();
   }
 
   void _load() {
@@ -39,7 +40,32 @@ class PackageListNotifier extends StateNotifier<List<Package>> {
     _load();
   }
 
-  Future<void> addPackage({
+  /// Check if tracking number already exists
+  bool isDuplicate(String trackingNumber) {
+    return state.any((p) => p.trackingNumber == trackingNumber);
+  }
+
+  /// Clean packages older than 30 days if auto-clean is enabled
+  Future<void> _cleanOldPackages() async {
+    final autoClean = await _ref.read(storageServiceProvider).getAutoClean();
+    if (!autoClean) return;
+
+    final storage = _ref.read(storageServiceProvider);
+    final now = DateTime.now();
+    final oldPackages = state.where((p) {
+      final age = now.difference(p.addedTime);
+      return age.inDays >= 30;
+    }).toList();
+
+    for (final pkg in oldPackages) {
+      await storage.deletePackage(pkg.id);
+    }
+    if (oldPackages.isNotEmpty) {
+      _load();
+    }
+  }
+
+  Future<String?> addPackage({
     required String trackingNumber,
     required String companyCode,
     required String companyName,
@@ -47,6 +73,11 @@ class PackageListNotifier extends StateNotifier<List<Package>> {
     String? remark,
     TrackingInfo? trackingInfo,
   }) async {
+    // Check duplicate
+    if (isDuplicate(trackingNumber)) {
+      return '当前快递单号已添加';
+    }
+
     final storage = _ref.read(storageServiceProvider);
     String status = 'collected';
     String lastContext = '';
@@ -72,6 +103,7 @@ class PackageListNotifier extends StateNotifier<List<Package>> {
     );
     await storage.addPackage(pkg);
     _load();
+    return null; // success
   }
 
   Future<void> deletePackage(String id) async {
