@@ -37,6 +37,9 @@ dependencies:
   # UUID 生成
   uuid: ^4.5.1
 
+  # 打开链接
+  url_launcher: ^6.3.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

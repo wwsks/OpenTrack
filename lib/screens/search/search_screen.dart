@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/tracking_info.dart';
 import '../../providers/package_provider.dart';
+import '../../providers/settings_provider.dart';
 import '../../utils/company_util.dart';
 import '../detail/detail_screen.dart';
 import '../../models/package.dart';
@@ -21,6 +22,17 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   bool _isLoading = false;
   TrackingInfo? _result;
   String? _error;
+  List<ExpressCompany> _allCompanies = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCompanies();
+  }
+
+  Future<void> _loadCompanies() async {
+    _allCompanies = await CompanyUtil.loadCompanies();
+  }
 
   @override
   void dispose() {
@@ -28,6 +40,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     _remarkController.dispose();
     _phoneController.dispose();
     super.dispose();
+  }
+
+  String _getCompanyName(String code) {
+    final match = _allCompanies.where((c) => c.code == code).toList();
+    return match.isNotEmpty ? match.first.name : code;
   }
 
   Future<void> _query() async {
@@ -75,34 +92,38 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       _result = info;
       _error = err;
       if (info != null) {
+        final companyName = _getCompanyName(info.companyCode);
         _selectedCompany ??= ExpressCompany(
-          name: _getCompanyName(info.companyCode),
+          name: companyName,
           code: info.companyCode,
           type: '',
         );
+
+        // Auto-save if enabled
+        final autoSave = ref.read(autoSaveProvider);
+        if (autoSave) {
+          _addToMyPackages();
+        }
       }
     });
-  }
-
-  String _getCompanyName(String code) {
-    return code;
   }
 
   Future<void> _addToMyPackages() async {
     if (_result == null) return;
     final trackingNumber = _trackingController.text.trim();
+    final companyName = _selectedCompany?.name ?? _getCompanyName(_result!.companyCode);
 
     await ref.read(allPackagesProvider.notifier).addPackage(
           trackingNumber: trackingNumber,
           companyCode: _result!.companyCode,
-          companyName:
-              _selectedCompany?.name ?? _result!.companyCode,
+          companyName: companyName,
           phone: _phoneController.text.trim().isNotEmpty
               ? _phoneController.text.trim()
               : null,
           remark: _remarkController.text.trim().isNotEmpty
               ? _remarkController.text.trim()
               : null,
+          trackingInfo: _result,
         );
 
     if (mounted) {
@@ -114,6 +135,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final autoSave = ref.watch(autoSaveProvider);
+
     return Scaffold(
       appBar: AppBar(title: const Text('查快递')),
       body: SingleChildScrollView(
@@ -187,15 +210,15 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 trackingNumber: _trackingController.text.trim(),
                 info: _result!,
                 companyName:
-                    _selectedCompany?.name ?? _result!.companyCode,
-                onAdd: _addToMyPackages,
+                    _selectedCompany?.name ?? _getCompanyName(_result!.companyCode),
+                onAdd: autoSave ? null : _addToMyPackages,
                 onViewDetail: () {
                   final pkg = Package(
                     id: '',
                     trackingNumber: _trackingController.text.trim(),
                     companyCode: _result!.companyCode,
                     companyName:
-                        _selectedCompany?.name ?? _result!.companyCode,
+                        _selectedCompany?.name ?? _getCompanyName(_result!.companyCode),
                     remark: _remarkController.text.trim().isNotEmpty
                         ? _remarkController.text.trim()
                         : null,
@@ -319,7 +342,7 @@ class _ResultCard extends StatelessWidget {
   final String trackingNumber;
   final TrackingInfo info;
   final String companyName;
-  final VoidCallback onAdd;
+  final VoidCallback? onAdd;
   final VoidCallback onViewDetail;
 
   const _ResultCard({
@@ -369,14 +392,16 @@ class _ResultCard extends StatelessWidget {
                     label: const Text('查看详情'),
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: onAdd,
-                    icon: const Icon(Icons.add),
-                    label: const Text('添加到我的快递'),
+                if (onAdd != null) ...[
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: onAdd,
+                      icon: const Icon(Icons.add),
+                      label: const Text('添加到我的快递'),
+                    ),
                   ),
-                ),
+                ],
               ],
             ),
           ],

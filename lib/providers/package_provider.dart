@@ -45,8 +45,19 @@ class PackageListNotifier extends StateNotifier<List<Package>> {
     required String companyName,
     String? phone,
     String? remark,
+    TrackingInfo? trackingInfo,
   }) async {
     final storage = _ref.read(storageServiceProvider);
+    String status = 'collected';
+    String lastContext = '';
+    DateTime lastTime = DateTime.now();
+
+    if (trackingInfo != null && trackingInfo.data.isNotEmpty) {
+      status = trackingInfo.state;
+      lastContext = trackingInfo.data.first.context;
+      lastTime = DateTime.tryParse(trackingInfo.data.first.time) ?? DateTime.now();
+    }
+
     final pkg = Package(
       id: const Uuid().v4(),
       trackingNumber: trackingNumber,
@@ -54,6 +65,10 @@ class PackageListNotifier extends StateNotifier<List<Package>> {
       companyName: companyName,
       phone: phone,
       remark: remark,
+      status: status,
+      lastContext: lastContext,
+      lastTime: lastTime,
+      isSigned: status == '3',
     );
     await storage.addPackage(pkg);
     _load();

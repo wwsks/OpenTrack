@@ -20,6 +20,10 @@ final hasApiConfigProvider = Provider<bool>((ref) {
   return key != null && key.isNotEmpty && customer != null && customer.isNotEmpty;
 });
 
+final autoSaveProvider = StateNotifierProvider<AutoSaveNotifier, bool>((ref) {
+  return AutoSaveNotifier(ref.read(storageServiceProvider));
+});
+
 class ApiKeyNotifier extends StateNotifier<String?> {
   final StorageService _storage;
   ApiKeyNotifier(this._storage) : super(null) {
@@ -49,5 +53,21 @@ class CustomerNotifier extends StateNotifier<String?> {
   Future<void> set(String customer) async {
     await _storage.setCustomer(customer);
     state = customer;
+  }
+}
+
+class AutoSaveNotifier extends StateNotifier<bool> {
+  final StorageService _storage;
+  AutoSaveNotifier(this._storage) : super(true) {
+    _load();
+  }
+
+  Future<void> _load() async {
+    state = await _storage.getAutoSave();
+  }
+
+  Future<void> set(bool value) async {
+    await _storage.setAutoSave(value);
+    state = value;
   }
 }

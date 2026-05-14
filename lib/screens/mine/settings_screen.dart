@@ -54,6 +54,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final autoSave = ref.watch(autoSaveProvider);
+
     return Scaffold(
       appBar: AppBar(title: const Text('API 配置')),
       body: SingleChildScrollView(
@@ -114,6 +116,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 padding: const EdgeInsets.symmetric(vertical: 14),
               ),
               child: const Text('保存'),
+            ),
+            const SizedBox(height: 24),
+            const Divider(),
+            const SizedBox(height: 8),
+            SwitchListTile(
+              title: const Text('查询后自动保存'),
+              subtitle: const Text('查询快递后自动添加到首页列表'),
+              value: autoSave,
+              onChanged: (value) {
+                ref.read(autoSaveProvider.notifier).set(value);
+              },
+              secondary: Icon(
+                autoSave ? Icons.save : Icons.save_outlined,
+                color: autoSave ? Colors.green : Colors.grey,
+              ),
             ),
           ],
         ),
