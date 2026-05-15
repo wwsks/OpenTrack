@@ -26,23 +26,31 @@ class ApiService {
 
     final sign = SignUtil.generateSign(param, apiKey, customer);
 
-    final response = await _dio.post(
-      AppConstants.apiBaseUrl,
-      options: Options(
-        contentType: Headers.formUrlEncodedContentType,
-      ),
-      data: {
-        'customer': customer,
-        'sign': sign,
-        'param': param,
-      },
-    );
+    try {
+      final response = await _dio.post(
+        AppConstants.apiBaseUrl,
+        options: Options(
+          contentType: Headers.formUrlEncodedContentType,
+          receiveTimeout: const Duration(seconds: 15),
+          sendTimeout: const Duration(seconds: 15),
+        ),
+        data: {
+          'customer': customer,
+          'sign': sign,
+          'param': param,
+        },
+      );
 
-    final data = response.data;
-    if (data is String) {
-      return TrackingInfo.fromJson(json.decode(data));
+      final data = response.data;
+      if (data is String) {
+        return TrackingInfo.fromJson(json.decode(data));
+      }
+      return TrackingInfo.fromJson(data);
+    } on DioException catch (e) {
+      throw Exception('网络请求失败: ${e.message} (${e.type})');
+    } catch (e) {
+      throw Exception('查询失败: $e');
     }
-    return TrackingInfo.fromJson(data);
   }
 
   /// 自动识别快递公司：逐个尝试常见快递公司
@@ -52,6 +60,7 @@ class ApiService {
     required String customer,
     String? phone,
   }) async {
+    String lastError = '';
     for (final code in [
       'yuantong',
       'zhongtong',
@@ -74,10 +83,14 @@ class ApiService {
         if (result.data.isNotEmpty) {
           return result;
         }
-      } catch (_) {
+      } catch (e) {
+        lastError = e.toString();
         continue;
       }
       await Future.delayed(const Duration(seconds: 1));
+    }
+    if (lastError.isNotEmpty) {
+      throw Exception(lastError);
     }
     return null;
   }

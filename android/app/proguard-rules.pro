@@ -9,14 +9,16 @@
 # Hive
 -keep class * extends hive.HiveObject { *; }
 
-# Dio & OkHttp
+# Dio
 -keep class io.flutter.plugins.** { *; }
 -dontwarn com.google.errorprone.annotations.**
--keepnames class okhttp3.internal.publicsuffix.PublicSuffixDatabase
+
+# OkHttp
 -dontwarn okhttp3.**
 -dontwarn okio.**
 -dontwarn javax.annotation.**
 -dontwarn org.conscrypt.**
+-keepnames class okhttp3.internal.publicsuffix.PublicSuffixDatabase
 -keep class okhttp3.** { *; }
 -keep class okio.** { *; }
 
@@ -46,3 +48,6 @@
 
 # Keep all model classes used with Dio
 -keep class * implements java.io.Serializable { *; }
+
+# Keep all classes in the app package
+-keep class com.opentrack.opentrack.** { *; }

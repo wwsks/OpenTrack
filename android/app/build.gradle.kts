@@ -32,17 +32,17 @@ android {
     signingConfigs {
         create("release") {
             val keystorePropsFile = rootProject.projectDir.resolve("../keystore.properties")
-            val keystoreProps = mutableMapOf<String, String>()
-            keystorePropsFile.forEachLine { line ->
-                val parts = line.split("=", limit = 2)
-                if (parts.size == 2) {
-                    keystoreProps[parts[0].trim()] = parts[1].trim()
+            val props = mutableMapOf<String, String>()
+            keystorePropsFile.readLines().forEach { line ->
+                val idx = line.indexOf('=')
+                if (idx > 0) {
+                    props[line.substring(0, idx).trim()] = line.substring(idx + 1).trim()
                 }
             }
-            storeFile = file(keystoreProps["storeFile"]!!)
-            storePassword = keystoreProps["storePassword"]!!
-            keyAlias = keystoreProps["keyAlias"]!!
-            keyPassword = keystoreProps["keyPassword"]!!
+            storeFile = file(props["storeFile"]!!)
+            storePassword = props["storePassword"]!!
+            keyAlias = props["keyAlias"]!!
+            keyPassword = props["keyPassword"]!!
         }
     }
 
@@ -50,7 +50,6 @@ android {
         release {
             signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = true
-            isShrinkResources = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }

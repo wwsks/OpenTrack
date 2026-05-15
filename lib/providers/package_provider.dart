@@ -172,19 +172,23 @@ class PackageListNotifier extends StateNotifier<List<Package>> {
       return (null, '请先配置 API Key 和 Customer');
     }
 
-    final api = _ref.read(apiServiceProvider);
-    final info = await api.autoDetectAndQuery(
-      trackingNumber: trackingNumber,
-      apiKey: apiKey,
-      customer: customer,
-      phone: phone,
-    );
+    try {
+      final api = _ref.read(apiServiceProvider);
+      final info = await api.autoDetectAndQuery(
+        trackingNumber: trackingNumber,
+        apiKey: apiKey,
+        customer: customer,
+        phone: phone,
+      );
 
-    if (info == null || info.data.isEmpty) {
-      return (null, '未找到快递信息，请检查单号或手动选择快递公司');
+      if (info == null || info.data.isEmpty) {
+        return (null, '未找到快递信息，请检查单号或手动选择快递公司');
+      }
+
+      return (info, null);
+    } catch (e) {
+      return (null, '查询失败: $e');
     }
-
-    return (info, null);
   }
 
   Future<(TrackingInfo?, String?)> manualQueryAndAdd({
