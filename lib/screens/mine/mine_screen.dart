@@ -75,7 +75,7 @@ class MineScreen extends ConsumerWidget {
           const ListTile(
             leading: Icon(Icons.info_outline),
             title: Text('自邮查'),
-            subtitle: const Text('v0.1.0 内测版'),
+            subtitle: Text('v0.1.1 beta'),
           ),
           ListTile(
             leading: const Icon(Icons.code),
@@ -97,31 +97,47 @@ class MineScreen extends ConsumerWidget {
   void _showApiGuideDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (ctx) => AlertDialog(
         title: const Text('如何获取快递100 API'),
-        content: const SingleChildScrollView(
+        content: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('1. 访问 api.kuaidi100.com，进入百递云 API 开放平台'),
-              SizedBox(height: 12),
-              Text('2. 注册账号，企业名称随便填'),
-              SizedBox(height: 12),
-              Text('3. 登录进入企业管理后台'),
-              SizedBox(height: 12),
-              Text('4. 首页点击"实时查询与订阅推送" → "快递信息订阅推送API" → "立即免费体验"'),
-              SizedBox(height: 12),
-              Text('5. 获取授权参数：授权 Key 和 Customer，填入本应用即可使用'),
-              SizedBox(height: 16),
-              Text('PS：新注册用户可获得免费 100 次查询次数',
+              const Text('1. 点击下方链接进入百递云 API 开放平台：'),
+              const SizedBox(height: 4),
+              InkWell(
+                onTap: () async {
+                  final url = Uri.parse('https://api.kuaidi100.com');
+                  if (await canLaunchUrl(url)) {
+                    await launchUrl(url, mode: LaunchMode.externalApplication);
+                  }
+                },
+                child: const Text(
+                  'https://api.kuaidi100.com',
+                  style: TextStyle(
+                    color: Colors.blue,
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Text('2. 注册账号，企业名称随便填'),
+              const SizedBox(height: 12),
+              const Text('3. 登录进入企业管理后台'),
+              const SizedBox(height: 12),
+              const Text('4. 首页点击"实时查询与订阅推送" → "快递信息订阅推送API" → "立即免费体验"'),
+              const SizedBox(height: 12),
+              const Text('5. 获取授权参数：授权 Key 和 Customer，填入本应用即可使用'),
+              const SizedBox(height: 16),
+              const Text('PS：新注册用户可获得免费 100 次查询次数',
                   style: TextStyle(color: Colors.orange, fontSize: 12)),
             ],
           ),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(ctx),
             child: const Text('知道了'),
           ),
         ],
