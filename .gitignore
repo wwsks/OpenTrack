@@ -19,3 +19,8 @@ build/
 
 # Local settings
 .claude/
+
+# 签名配置
+keystore.properties
+*.jks
+*.keystore

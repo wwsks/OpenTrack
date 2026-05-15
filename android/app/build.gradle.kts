@@ -29,9 +29,28 @@ android {
         multiDexEnabled = true
     }
 
+    signingConfigs {
+        create("release") {
+            val keystorePropsFile = rootProject.projectDir.resolve("../keystore.properties")
+            val keystoreProps = mutableMapOf<String, String>()
+            keystorePropsFile.forEachLine { line ->
+                val parts = line.split("=", limit = 2)
+                if (parts.size == 2) {
+                    keystoreProps[parts[0].trim()] = parts[1].trim()
+                }
+            }
+            storeFile = file(keystoreProps["storeFile"]!!)
+            storePassword = keystoreProps["storePassword"]!!
+            keyAlias = keystoreProps["keyAlias"]!!
+            keyPassword = keystoreProps["keyPassword"]!!
+        }
+    }
+
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
+            isMinifyEnabled = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
 }
