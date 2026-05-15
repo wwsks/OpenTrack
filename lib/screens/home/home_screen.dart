@@ -36,7 +36,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('OpenTrack'),
+        title: const Text('快递列表'),
         bottom: TabBar(
           controller: _tabController,
           tabs: const [
