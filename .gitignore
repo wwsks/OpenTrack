@@ -24,3 +24,8 @@ build/
 keystore.properties
 *.jks
 *.keystore
+
+# 参考文档
+sms_parsing_deep_dive.md
+implementation_guide.md
+sms_parser_dart.md
