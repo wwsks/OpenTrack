@@ -30,8 +30,8 @@ class TrackingInfo {
   }
 
   /// 是否已签收
-  /// 优先判断 ischeck，其次判断 state
-  bool get isSigned => ischeck == '1' || state == '3';
+  /// 优先判断 ischeck，其次判断 state（state 以 '3' 开头表示签收，如 '3'、'301'、'304'）
+  bool get isSigned => ischeck == '1' || state.startsWith('3');
 }
 
 class TrackingEvent {

@@ -99,7 +99,7 @@ class PackageListNotifier extends StateNotifier<List<Package>> {
       status: status,
       lastContext: lastContext,
       lastTime: lastTime,
-      isSigned: status == '3',
+      isSigned: trackingInfo?.isSigned ?? false,
     );
     await storage.addPackage(pkg);
     _load();

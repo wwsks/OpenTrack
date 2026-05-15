@@ -38,6 +38,11 @@ final autoCheckUpdateProvider =
   return AutoCheckUpdateNotifier(ref.read(storageServiceProvider));
 });
 
+final hideCompletedPickupsProvider =
+    StateNotifierProvider<HideCompletedPickupsNotifier, bool>((ref) {
+  return HideCompletedPickupsNotifier(ref.read(storageServiceProvider));
+});
+
 final deletedPackagesProvider =
     StateNotifierProvider<DeletedPackagesNotifier, List<Package>>((ref) {
   return DeletedPackagesNotifier(ref.read(storageServiceProvider));
@@ -72,6 +77,22 @@ class CustomerNotifier extends StateNotifier<String?> {
   Future<void> set(String customer) async {
     await _storage.setCustomer(customer);
     state = customer;
+  }
+}
+
+class HideCompletedPickupsNotifier extends StateNotifier<bool> {
+  final StorageService _storage;
+  HideCompletedPickupsNotifier(this._storage) : super(false) {
+    _load();
+  }
+
+  Future<void> _load() async {
+    state = await _storage.getHideCompletedPickups();
+  }
+
+  Future<void> set(bool value) async {
+    await _storage.setHideCompletedPickups(value);
+    state = value;
   }
 }
 

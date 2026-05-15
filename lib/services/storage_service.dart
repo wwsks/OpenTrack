@@ -76,6 +76,16 @@ class StorageService {
     await prefs.setBool(AppConstants.keyAutoCheckUpdate, value);
   }
 
+  Future<bool> getHideCompletedPickups() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(AppConstants.keyHideCompletedPickups) ?? false;
+  }
+
+  Future<void> setHideCompletedPickups(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(AppConstants.keyHideCompletedPickups, value);
+  }
+
   // --- Hive (快递数据) ---
 
   List<Package> getAllPackages() => _packageBox.values.toList();

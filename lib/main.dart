@@ -4,6 +4,7 @@ import 'config/theme.dart';
 import 'providers/settings_provider.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/search/search_screen.dart';
+import 'screens/pickup/pickup_screen.dart';
 import 'screens/mine/mine_screen.dart';
 import 'services/notification_service.dart';
 import 'services/storage_service.dart';
@@ -63,6 +64,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
   final _screens = const [
     HomeScreen(),
     SearchScreen(),
+    PickupScreen(),
     MineScreen(),
   ];
 
@@ -131,6 +133,10 @@ class _MainScreenState extends ConsumerState<MainScreen> {
           BottomNavigationBarItem(
             icon: Icon(Icons.search),
             label: '查快递',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.qr_code),
+            label: '取件码',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person),

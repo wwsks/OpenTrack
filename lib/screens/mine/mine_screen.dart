@@ -75,7 +75,7 @@ class MineScreen extends ConsumerWidget {
           const ListTile(
             leading: Icon(Icons.info_outline),
             title: Text('自邮查'),
-            subtitle: Text('v0.1.1 beta'),
+            subtitle: Text('v0.1.2 beta'),
           ),
           ListTile(
             leading: const Icon(Icons.code),
@@ -84,9 +84,7 @@ class MineScreen extends ConsumerWidget {
             trailing: const Icon(Icons.open_in_new),
             onTap: () async {
               final url = Uri.parse('https://github.com/wwsks/OpenTrack');
-              if (await canLaunchUrl(url)) {
-                await launchUrl(url, mode: LaunchMode.externalApplication);
-              }
+              await launchUrl(url, mode: LaunchMode.externalApplication);
             },
           ),
         ],
@@ -109,9 +107,7 @@ class MineScreen extends ConsumerWidget {
               InkWell(
                 onTap: () async {
                   final url = Uri.parse('https://api.kuaidi100.com');
-                  if (await canLaunchUrl(url)) {
-                    await launchUrl(url, mode: LaunchMode.externalApplication);
-                  }
+                  await launchUrl(url, mode: LaunchMode.externalApplication);
                 },
                 child: const Text(
                   'https://api.kuaidi100.com',

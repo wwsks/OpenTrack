@@ -10,6 +10,7 @@ class AppConstants {
   static const String keyAutoClean = 'auto_clean_enabled';
   static const String keyThemeMode = 'theme_mode';
   static const String keyAutoCheckUpdate = 'auto_check_update';
+  static const String keyHideCompletedPickups = 'hide_completed_pickups';
   static const String hiveDeletedBoxName = 'deleted_packages_box';
   static const String hiveBoxName = 'packages_box';
 
