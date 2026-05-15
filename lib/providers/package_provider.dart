@@ -165,9 +165,10 @@ class PackageListNotifier extends StateNotifier<List<Package>> {
     String? phone,
     String? remark,
   }) async {
-    final apiKey = _ref.read(apiKeyProvider);
-    final customer = _ref.read(customerProvider);
-    if (apiKey == null || customer == null) {
+    final storage = _ref.read(storageServiceProvider);
+    final apiKey = _ref.read(apiKeyProvider) ?? await storage.getApiKey();
+    final customer = _ref.read(customerProvider) ?? await storage.getCustomer();
+    if (apiKey == null || apiKey.isEmpty || customer == null || customer.isEmpty) {
       return (null, '请先配置 API Key 和 Customer');
     }
 
@@ -193,9 +194,10 @@ class PackageListNotifier extends StateNotifier<List<Package>> {
     String? phone,
     String? remark,
   }) async {
-    final apiKey = _ref.read(apiKeyProvider);
-    final customer = _ref.read(customerProvider);
-    if (apiKey == null || customer == null) {
+    final storage = _ref.read(storageServiceProvider);
+    final apiKey = _ref.read(apiKeyProvider) ?? await storage.getApiKey();
+    final customer = _ref.read(customerProvider) ?? await storage.getCustomer();
+    if (apiKey == null || apiKey.isEmpty || customer == null || customer.isEmpty) {
       return (null, '请先配置 API Key 和 Customer');
     }
 

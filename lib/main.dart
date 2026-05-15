@@ -62,9 +62,9 @@ class _MainScreenState extends ConsumerState<MainScreen> {
   int _currentIndex = 0;
 
   final _screens = const [
+    PickupScreen(),
     HomeScreen(),
     SearchScreen(),
-    PickupScreen(),
     MineScreen(),
   ];
 
@@ -127,16 +127,16 @@ class _MainScreenState extends ConsumerState<MainScreen> {
         onTap: (i) => setState(() => _currentIndex = i),
         items: const [
           BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: '首页',
+            icon: Icon(Icons.qr_code),
+            label: '取件码',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.local_shipping),
+            label: '快递列表',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.search),
             label: '查快递',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.qr_code),
-            label: '取件码',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person),
