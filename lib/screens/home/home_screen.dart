@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/package_provider.dart';
 import '../../models/package.dart';
@@ -75,6 +76,23 @@ class _PackageList extends ConsumerWidget {
 
   const _PackageList({required this.packages, required this.onRefresh});
 
+  void _showDeleteMenu(BuildContext context, WidgetRef ref, Package pkg) {
+    showModalBottomSheet(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: ListTile(
+          leading: const Icon(Icons.delete_outline, color: Colors.red),
+          title: const Text('删除快递', style: TextStyle(color: Colors.red)),
+          subtitle: Text(pkg.trackingNumber),
+          onTap: () {
+            Navigator.pop(ctx);
+            ref.read(allPackagesProvider.notifier).deletePackage(pkg.id);
+          },
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (packages.isEmpty) {
@@ -102,42 +120,45 @@ class _PackageList extends ConsumerWidget {
             direction: DismissDirection.endToStart,
             background: Container(
               alignment: Alignment.centerRight,
-              padding: const EdgeInsets.only(right: 20),
-              color: Colors.red,
-              child: const Icon(Icons.delete, color: Colors.white),
-            ),
-            confirmDismiss: (_) async {
-              return await showDialog<bool>(
-                context: context,
-                builder: (ctx) => AlertDialog(
-                  title: const Text('确认删除'),
-                  content: Text('确定要删除快递 ${pkg.trackingNumber} 吗？'),
-                  actions: [
-                    TextButton(
-                        onPressed: () => Navigator.pop(ctx, false),
-                        child: const Text('取消')),
-                    TextButton(
-                        onPressed: () => Navigator.pop(ctx, true),
-                        child: const Text('删除')),
-                  ],
+              padding: const EdgeInsets.only(right: 24),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.red.shade300, Colors.red],
+                  stops: const [0.0, 0.5],
                 ),
-              );
-            },
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Icon(Icons.delete_outline, color: Colors.white, size: 22),
+                  SizedBox(width: 6),
+                  Text('删除',
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500)),
+                ],
+              ),
+            ),
             onDismissed: (_) {
               ref.read(allPackagesProvider.notifier).deletePackage(pkg.id);
             },
-            child: PackageCard(
-              package: pkg,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (_) => DetailScreen(package: pkg)),
-                );
+            child: GestureDetector(
+              onLongPress: () {
+                HapticFeedback.mediumImpact();
+                _showDeleteMenu(context, ref, pkg);
               },
-              onRefresh: () {
-                ref.read(allPackagesProvider.notifier).refreshSingle(pkg);
-              },
+              child: PackageCard(
+                package: pkg,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => DetailScreen(package: pkg)),
+                  );
+                },
+              ),
             ),
           );
         },

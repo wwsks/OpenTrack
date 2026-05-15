@@ -9,12 +9,63 @@ class AdvancedSettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final autoSave = ref.watch(autoSaveProvider);
     final autoClean = ref.watch(autoCleanProvider);
+    final themeModeIndex = ref.watch(themeModeProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('高级设置')),
       body: ListView(
         children: [
           const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 16, 4),
+            child: Text('外观',
+                style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey.shade600,
+                    fontWeight: FontWeight.w500)),
+          ),
+          Card(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: Column(
+              children: [
+                RadioListTile<int>(
+                  title: const Text('跟随系统'),
+                  secondary: const Icon(Icons.brightness_auto),
+                  value: 0,
+                  groupValue: themeModeIndex,
+                  onChanged: (v) =>
+                      ref.read(themeModeProvider.notifier).set(v!),
+                ),
+                const Divider(height: 1),
+                RadioListTile<int>(
+                  title: const Text('浅色模式'),
+                  secondary: const Icon(Icons.light_mode),
+                  value: 1,
+                  groupValue: themeModeIndex,
+                  onChanged: (v) =>
+                      ref.read(themeModeProvider.notifier).set(v!),
+                ),
+                const Divider(height: 1),
+                RadioListTile<int>(
+                  title: const Text('深色模式'),
+                  secondary: const Icon(Icons.dark_mode),
+                  value: 2,
+                  groupValue: themeModeIndex,
+                  onChanged: (v) =>
+                      ref.read(themeModeProvider.notifier).set(v!),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 16, 4),
+            child: Text('功能',
+                style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey.shade600,
+                    fontWeight: FontWeight.w500)),
+          ),
           Card(
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: Column(

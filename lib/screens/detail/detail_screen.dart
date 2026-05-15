@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/package.dart';
 import '../../models/tracking_info.dart';
@@ -107,7 +108,7 @@ class _InfoCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _infoRow('快递公司', package.companyName),
-            _infoRow('快递单号', package.trackingNumber),
+            _trackingRow(context),
             _infoRow('当前状态', package.isSigned ? '已签收' : '未签收'),
             if (package.remark != null && package.remark!.isNotEmpty)
               _infoRow('物品备注', package.remark!),
@@ -115,6 +116,39 @@ class _InfoCard extends StatelessWidget {
             _infoRow('更新时间', _formatDate(package.lastTime)),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _trackingRow(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(
+            width: 80,
+            child: Text('快递单号',
+                style: TextStyle(color: Colors.grey, fontSize: 14)),
+          ),
+          Expanded(
+            child: Text(package.trackingNumber,
+                style: const TextStyle(fontSize: 14)),
+          ),
+          InkWell(
+            onTap: () {
+              Clipboard.setData(ClipboardData(text: package.trackingNumber));
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('已复制快递单号')),
+              );
+            },
+            borderRadius: BorderRadius.circular(4),
+            child: const Padding(
+              padding: EdgeInsets.all(4),
+              child: Icon(Icons.copy, size: 18, color: Colors.grey),
+            ),
+          ),
+        ],
       ),
     );
   }

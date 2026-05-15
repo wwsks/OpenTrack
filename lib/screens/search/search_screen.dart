@@ -18,11 +18,19 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   final _trackingController = TextEditingController();
   final _remarkController = TextEditingController();
   final _phoneController = TextEditingController();
+  final _batchController = TextEditingController();
   ExpressCompany? _selectedCompany;
   bool _isLoading = false;
   TrackingInfo? _result;
   String? _error;
   List<ExpressCompany> _allCompanies = [];
+
+  // 批量查询
+  bool _isBatchMode = false;
+  bool _isBatchLoading = false;
+  List<_BatchResult> _batchResults = [];
+  int _batchProgress = 0;
+  int _batchTotal = 0;
 
   @override
   void initState() {
@@ -39,6 +47,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     _trackingController.dispose();
     _remarkController.dispose();
     _phoneController.dispose();
+    _batchController.dispose();
     super.dispose();
   }
 
@@ -108,6 +117,86 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     });
   }
 
+  Future<void> _batchQuery() async {
+    final text = _batchController.text.trim();
+    if (text.isEmpty) {
+      setState(() => _error = '请输入快递单号，每行一个');
+      return;
+    }
+
+    final numbers = text
+        .split('\n')
+        .map((e) => e.trim())
+        .where((e) => e.isNotEmpty)
+        .toList();
+
+    if (numbers.isEmpty) {
+      setState(() => _error = '请输入快递单号，每行一个');
+      return;
+    }
+
+    setState(() {
+      _isBatchLoading = true;
+      _error = null;
+      _batchResults = [];
+      _batchProgress = 0;
+      _batchTotal = numbers.length;
+    });
+
+    for (final number in numbers) {
+      if (!mounted) break;
+      final (info, err) = await ref
+          .read(allPackagesProvider.notifier)
+          .autoDetectAndAdd(trackingNumber: number);
+
+      setState(() {
+        _batchProgress++;
+        _batchResults.add(_BatchResult(
+          trackingNumber: number,
+          info: info,
+          error: err,
+        ));
+      });
+
+      if (_batchProgress < _batchTotal) {
+        await Future.delayed(const Duration(seconds: 2));
+      }
+    }
+
+    if (mounted) {
+      setState(() => _isBatchLoading = false);
+
+      final autoSave = ref.read(autoSaveProvider);
+      if (autoSave) {
+        _addAllBatchToPackages();
+      }
+    }
+  }
+
+  Future<void> _addAllBatchToPackages() async {
+    int added = 0;
+    int skipped = 0;
+    for (final r in _batchResults) {
+      if (r.info == null) continue;
+      final error = await ref.read(allPackagesProvider.notifier).addPackage(
+            trackingNumber: r.trackingNumber,
+            companyCode: r.info!.companyCode,
+            companyName: _getCompanyName(r.info!.companyCode),
+            trackingInfo: r.info,
+          );
+      if (error != null) {
+        skipped++;
+      } else {
+        added++;
+      }
+    }
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('已添加 $added 个快递${skipped > 0 ? '，跳过 $skipped 个重复' : ''}')),
+      );
+    }
+  }
+
   Future<void> _addToMyPackages() async {
     if (_result == null) return;
     final trackingNumber = _trackingController.text.trim();
@@ -150,55 +239,114 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            TextField(
-              controller: _trackingController,
-              decoration: const InputDecoration(
-                labelText: '快递单号',
-                hintText: '请输入快递单号',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.search),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _remarkController,
-              decoration: const InputDecoration(
-                labelText: '物品备注（选填）',
-                hintText: '如：手机壳、书籍等',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.note_alt_outlined),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _phoneController,
-              decoration: const InputDecoration(
-                labelText: '手机号（顺丰等需要）',
-                hintText: '收/寄件人手机号',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.phone),
-              ),
-              keyboardType: TextInputType.phone,
-            ),
-            const SizedBox(height: 12),
-            _CompanySelector(
-              selected: _selectedCompany,
-              onSelected: (c) => setState(() => _selectedCompany = c),
+            // 模式切换
+            SegmentedButton<bool>(
+              segments: const [
+                ButtonSegment(value: false, label: Text('单个查询'), icon: Icon(Icons.search)),
+                ButtonSegment(value: true, label: Text('批量查询'), icon: Icon(Icons.playlist_add)),
+              ],
+              selected: {_isBatchMode},
+              onSelectionChanged: (v) => setState(() {
+                _isBatchMode = v.first;
+                _error = null;
+                _result = null;
+                _batchResults = [];
+              }),
             ),
             const SizedBox(height: 16),
-            ElevatedButton.icon(
-              onPressed: _isLoading ? null : _query,
-              icon: _isLoading
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2))
-                  : const Icon(Icons.search),
-              label: Text(_isLoading ? '查询中...' : '查询'),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 14),
+
+            if (!_isBatchMode) ...[
+              // 单个查询模式
+              TextField(
+                controller: _trackingController,
+                decoration: const InputDecoration(
+                  labelText: '快递单号',
+                  hintText: '请输入快递单号',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.search),
+                ),
               ),
-            ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _remarkController,
+                decoration: const InputDecoration(
+                  labelText: '物品备注（选填）',
+                  hintText: '如：手机壳、书籍等',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.note_alt_outlined),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _phoneController,
+                decoration: const InputDecoration(
+                  labelText: '手机号（顺丰等需要）',
+                  hintText: '收/寄件人手机号',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.phone),
+                ),
+                keyboardType: TextInputType.phone,
+              ),
+              const SizedBox(height: 12),
+              _CompanySelector(
+                selected: _selectedCompany,
+                onSelected: (c) => setState(() => _selectedCompany = c),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton.icon(
+                onPressed: _isLoading ? null : _query,
+                icon: _isLoading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2))
+                    : const Icon(Icons.search),
+                label: Text(_isLoading ? '查询中...' : '查询'),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+              ),
+            ] else ...[
+              // 批量查询模式
+              TextField(
+                controller: _batchController,
+                maxLines: 6,
+                decoration: const InputDecoration(
+                  labelText: '快递单号',
+                  hintText: '每行输入一个快递单号\n例如：\nYT1234567890\nSF1234567890',
+                  border: OutlineInputBorder(),
+                  alignLabelWithHint: true,
+                ),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton.icon(
+                onPressed: _isBatchLoading ? null : _batchQuery,
+                icon: _isBatchLoading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2))
+                    : const Icon(Icons.playlist_add),
+                label: Text(_isBatchLoading
+                    ? '查询中 ($_batchProgress/$_batchTotal)'
+                    : '批量查询'),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+              ),
+              if (!autoSave && _batchResults.isNotEmpty && !_isBatchLoading) ...[
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  onPressed: _addAllBatchToPackages,
+                  icon: const Icon(Icons.add_circle_outline),
+                  label: const Text('全部添加到我的快递'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                ),
+              ],
+            ],
+
             if (_error != null) ...[
               const SizedBox(height: 16),
               Card(
@@ -210,7 +358,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 ),
               ),
             ],
-            if (_result != null) ...[
+
+            // 单个查询结果
+            if (!_isBatchMode && _result != null) ...[
               const SizedBox(height: 16),
               _ResultCard(
                 trackingNumber: _trackingController.text.trim(),
@@ -238,6 +388,15 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                             )),
                   );
                 },
+              ),
+            ],
+
+            // 批量查询结果
+            if (_isBatchMode && _batchResults.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              _BatchResultList(
+                results: _batchResults,
+                getCompanyName: _getCompanyName,
               ),
             ],
           ],
@@ -410,6 +569,72 @@ class _ResultCard extends StatelessWidget {
                 ],
               ],
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BatchResult {
+  final String trackingNumber;
+  final TrackingInfo? info;
+  final String? error;
+
+  _BatchResult({required this.trackingNumber, this.info, this.error});
+}
+
+class _BatchResultList extends StatelessWidget {
+  final List<_BatchResult> results;
+  final String Function(String) getCompanyName;
+
+  const _BatchResultList({required this.results, required this.getCompanyName});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('查询结果 (${results.where((r) => r.info != null).length}/${results.length} 成功)',
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+            const Divider(),
+            ...results.map((r) => Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  child: Row(
+                    children: [
+                      Icon(
+                        r.info != null ? Icons.check_circle : Icons.error_outline,
+                        size: 20,
+                        color: r.info != null ? Colors.green : Colors.red,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(r.trackingNumber,
+                                style: const TextStyle(fontSize: 13)),
+                            if (r.info != null)
+                              Text(
+                                '${getCompanyName(r.info!.companyCode)} · ${r.info!.data.isNotEmpty ? r.info!.data.first.context : "暂无轨迹"}',
+                                style: TextStyle(
+                                    fontSize: 12, color: Colors.grey.shade600),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              )
+                            else
+                              Text(r.error ?? '查询失败',
+                                  style: const TextStyle(
+                                      fontSize: 12, color: Colors.red)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                )),
           ],
         ),
       ),

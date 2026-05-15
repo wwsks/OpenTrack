@@ -108,6 +108,10 @@ class PackageListNotifier extends StateNotifier<List<Package>> {
 
   Future<void> deletePackage(String id) async {
     final storage = _ref.read(storageServiceProvider);
+    final pkg = storage.getPackage(id);
+    if (pkg != null) {
+      await storage.addToRecycleBin(pkg);
+    }
     await storage.deletePackage(id);
     _load();
   }

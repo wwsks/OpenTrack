@@ -4,13 +4,11 @@ import '../models/package.dart';
 class PackageCard extends StatelessWidget {
   final Package package;
   final VoidCallback? onTap;
-  final VoidCallback? onRefresh;
 
   const PackageCard({
     super.key,
     required this.package,
     this.onTap,
-    this.onRefresh,
   });
 
   @override
@@ -76,12 +74,6 @@ class PackageCard extends StatelessWidget {
                   ],
                 ),
               ),
-              if (onRefresh != null)
-                IconButton(
-                  icon: const Icon(Icons.refresh, size: 20),
-                  onPressed: onRefresh,
-                  tooltip: '刷新',
-                ),
             ],
           ),
         ),

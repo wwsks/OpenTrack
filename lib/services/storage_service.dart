@@ -5,11 +5,13 @@ import '../models/package.dart';
 
 class StorageService {
   late Box<Package> _packageBox;
+  late Box<Package> _deletedBox;
 
   Future<void> init() async {
     await Hive.initFlutter();
     Hive.registerAdapter(PackageAdapter());
     _packageBox = await Hive.openBox<Package>(AppConstants.hiveBoxName);
+    _deletedBox = await Hive.openBox<Package>(AppConstants.hiveDeletedBoxName);
   }
 
   // --- SharedPreferences (API 配置) ---
@@ -54,6 +56,26 @@ class StorageService {
     await prefs.setBool(AppConstants.keyAutoClean, value);
   }
 
+  Future<int> getThemeMode() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt(AppConstants.keyThemeMode) ?? 0;
+  }
+
+  Future<void> setThemeMode(int value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(AppConstants.keyThemeMode, value);
+  }
+
+  Future<bool> getAutoCheckUpdate() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(AppConstants.keyAutoCheckUpdate) ?? true;
+  }
+
+  Future<void> setAutoCheckUpdate(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(AppConstants.keyAutoCheckUpdate, value);
+  }
+
   // --- Hive (快递数据) ---
 
   List<Package> getAllPackages() => _packageBox.values.toList();
@@ -76,6 +98,30 @@ class StorageService {
 
   Future<void> deletePackage(String id) async {
     await _packageBox.delete(id);
+  }
+
+  // --- 回收站 ---
+
+  List<Package> getDeletedPackages() => _deletedBox.values.toList();
+
+  Future<void> addToRecycleBin(Package package) async {
+    await _deletedBox.put(package.id, package);
+  }
+
+  Future<void> restoreFromRecycleBin(String id) async {
+    final pkg = _deletedBox.get(id);
+    if (pkg != null) {
+      await _packageBox.put(id, pkg);
+      await _deletedBox.delete(id);
+    }
+  }
+
+  Future<void> permanentlyDelete(String id) async {
+    await _deletedBox.delete(id);
+  }
+
+  Future<void> clearRecycleBin() async {
+    await _deletedBox.clear();
   }
 
   Future<void> close() async {

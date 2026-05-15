@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../models/package.dart';
 import '../services/storage_service.dart';
 
 final storageServiceProvider = Provider<StorageService>((ref) {
@@ -26,6 +27,20 @@ final autoSaveProvider = StateNotifierProvider<AutoSaveNotifier, bool>((ref) {
 
 final autoCleanProvider = StateNotifierProvider<AutoCleanNotifier, bool>((ref) {
   return AutoCleanNotifier(ref.read(storageServiceProvider));
+});
+
+final themeModeProvider = StateNotifierProvider<ThemeModeNotifier, int>((ref) {
+  return ThemeModeNotifier(ref.read(storageServiceProvider));
+});
+
+final autoCheckUpdateProvider =
+    StateNotifierProvider<AutoCheckUpdateNotifier, bool>((ref) {
+  return AutoCheckUpdateNotifier(ref.read(storageServiceProvider));
+});
+
+final deletedPackagesProvider =
+    StateNotifierProvider<DeletedPackagesNotifier, List<Package>>((ref) {
+  return DeletedPackagesNotifier(ref.read(storageServiceProvider));
 });
 
 class ApiKeyNotifier extends StateNotifier<String?> {
@@ -73,6 +88,64 @@ class AutoSaveNotifier extends StateNotifier<bool> {
   Future<void> set(bool value) async {
     await _storage.setAutoSave(value);
     state = value;
+  }
+}
+
+class ThemeModeNotifier extends StateNotifier<int> {
+  final StorageService _storage;
+  ThemeModeNotifier(this._storage) : super(0) {
+    _load();
+  }
+
+  Future<void> _load() async {
+    state = await _storage.getThemeMode();
+  }
+
+  Future<void> set(int value) async {
+    await _storage.setThemeMode(value);
+    state = value;
+  }
+}
+
+class AutoCheckUpdateNotifier extends StateNotifier<bool> {
+  final StorageService _storage;
+  AutoCheckUpdateNotifier(this._storage) : super(true) {
+    _load();
+  }
+
+  Future<void> _load() async {
+    state = await _storage.getAutoCheckUpdate();
+  }
+
+  Future<void> set(bool value) async {
+    await _storage.setAutoCheckUpdate(value);
+    state = value;
+  }
+}
+
+class DeletedPackagesNotifier extends StateNotifier<List<Package>> {
+  final StorageService _storage;
+  DeletedPackagesNotifier(this._storage) : super([]) {
+    _load();
+  }
+
+  void _load() {
+    state = _storage.getDeletedPackages();
+  }
+
+  Future<void> restore(String id) async {
+    await _storage.restoreFromRecycleBin(id);
+    _load();
+  }
+
+  Future<void> permanentlyDelete(String id) async {
+    await _storage.permanentlyDelete(id);
+    _load();
+  }
+
+  Future<void> clearAll() async {
+    await _storage.clearRecycleBin();
+    _load();
   }
 }
 

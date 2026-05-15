@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../providers/settings_provider.dart';
 import 'settings_screen.dart';
 import 'advanced_settings_screen.dart';
+import 'recycle_bin_screen.dart';
 
 class MineScreen extends ConsumerWidget {
   const MineScreen({super.key});
@@ -55,6 +56,21 @@ class MineScreen extends ConsumerWidget {
               );
             },
           ),
+          _SectionTitle(title: '其他'),
+          ListTile(
+            leading: const Icon(Icons.delete_outline),
+            title: const Text('回收站'),
+            subtitle: const Text('查看已删除的快递'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const RecycleBinScreen()),
+              );
+            },
+          ),
+          const Divider(height: 1),
+          _AutoCheckUpdateTile(),
           _SectionTitle(title: '关于'),
           const ListTile(
             leading: Icon(Icons.info_outline),
@@ -88,13 +104,13 @@ class MineScreen extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('1. 百度搜索"快递100 API"，进入百递云 API 开放平台'),
+              Text('1. 访问 api.kuaidi100.com，进入百递云 API 开放平台'),
               SizedBox(height: 12),
               Text('2. 注册账号，企业名称随便填'),
               SizedBox(height: 12),
               Text('3. 登录进入企业管理后台'),
               SizedBox(height: 12),
-              Text('4. 首页点击"实时查询与订阅推送"'),
+              Text('4. 首页点击"实时查询与订阅推送" → "快递信息订阅推送API" → "立即免费体验"'),
               SizedBox(height: 12),
               Text('5. 获取授权参数：授权 Key 和 Customer，填入本应用即可使用'),
               SizedBox(height: 16),
@@ -110,6 +126,27 @@ class MineScreen extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _AutoCheckUpdateTile extends ConsumerWidget {
+  const _AutoCheckUpdateTile();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final autoCheck = ref.watch(autoCheckUpdateProvider);
+    return SwitchListTile(
+      secondary: Icon(
+        autoCheck ? Icons.system_update : Icons.system_update_outlined,
+        color: autoCheck ? Colors.blue : Colors.grey,
+      ),
+      title: const Text('自动检查更新'),
+      subtitle: const Text('打开应用时检查是否有新版本'),
+      value: autoCheck,
+      onChanged: (value) {
+        ref.read(autoCheckUpdateProvider.notifier).set(value);
+      },
     );
   }
 }
