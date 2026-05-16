@@ -403,6 +403,11 @@ class _PickupCodeItem extends StatelessWidget {
 
   const _PickupCodeItem({required this.smsData, required this.onToggle});
 
+  String _getCompany() {
+    final parser = SmsParser();
+    return parser.extractCompany(smsData.sms.body);
+  }
+
   @override
   Widget build(BuildContext context) {
     final time = DateTime.fromMillisecondsSinceEpoch(smsData.sms.timestamp);
@@ -414,6 +419,8 @@ class _PickupCodeItem extends StatelessWidget {
       timeStr = '${time.month.toString().padLeft(2, '0')}-${time.day.toString().padLeft(2, '0')} '
           '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
     }
+
+    final company = _getCompany();
 
     return InkWell(
       onTap: onToggle,
@@ -432,14 +439,23 @@ class _PickupCodeItem extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    SmsUtil.formatPickupCode(smsData.code),
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: smsData.isCompleted ? Colors.grey : null,
-                      decoration: smsData.isCompleted ? TextDecoration.lineThrough : null,
-                    ),
+                  Row(
+                    children: [
+                      Text(
+                        SmsUtil.formatPickupCode(smsData.code),
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: smsData.isCompleted ? Colors.grey : null,
+                          decoration: smsData.isCompleted ? TextDecoration.lineThrough : null,
+                        ),
+                      ),
+                      if (company.isNotEmpty) ...[
+                        const SizedBox(width: 8),
+                        Text(company,
+                            style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                      ],
+                    ],
                   ),
                   Text(timeStr,
                       style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),

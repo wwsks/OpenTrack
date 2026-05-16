@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../providers/settings_provider.dart';
+import '../../services/update_service.dart';
 import 'settings_screen.dart';
 import 'advanced_settings_screen.dart';
 import 'recycle_bin_screen.dart';
@@ -72,10 +73,61 @@ class MineScreen extends ConsumerWidget {
           const Divider(height: 1),
           _AutoCheckUpdateTile(),
           _SectionTitle(title: '关于'),
-          const ListTile(
-            leading: Icon(Icons.info_outline),
-            title: Text('自由取'),
-            subtitle: Text('v0.3.1'),
+          ListTile(
+            leading: const Icon(Icons.info_outline),
+            title: const Text('自由取'),
+            subtitle: const Text('v0.3.1'),
+            trailing: IconButton(
+              icon: const Icon(Icons.refresh),
+              tooltip: '检查更新',
+              onPressed: () async {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('正在检查更新...')),
+                );
+                final updateInfo = await UpdateService.checkForUpdate();
+                if (context.mounted) {
+                  if (updateInfo != null) {
+                    showDialog(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: Text('发现新版本 v${updateInfo.latestVersion}'),
+                        content: SingleChildScrollView(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Text('更新内容：',
+                                  style: TextStyle(fontWeight: FontWeight.bold)),
+                              const SizedBox(height: 8),
+                              Text(updateInfo.releaseNotes.isNotEmpty
+                                  ? updateInfo.releaseNotes
+                                  : '暂无更新说明'),
+                            ],
+                          ),
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx),
+                            child: const Text('稍后再说'),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              Navigator.pop(ctx);
+                              UpdateService.openDownloadPage(updateInfo.downloadUrl);
+                            },
+                            child: const Text('去下载'),
+                          ),
+                        ],
+                      ),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('已是最新版本')),
+                    );
+                  }
+                }
+              },
+            ),
           ),
           ListTile(
             leading: const Icon(Icons.code),
