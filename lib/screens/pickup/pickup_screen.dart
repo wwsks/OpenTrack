@@ -38,6 +38,7 @@ class _PickupScreenState extends State<PickupScreen> {
       if (status.isGranted) {
         setState(() => _hasPermission = true);
         await _loadData();
+        _checkXiaomiPermission();
       } else {
         setState(() {
           _hasPermission = false;
@@ -50,6 +51,57 @@ class _PickupScreenState extends State<PickupScreen> {
         _loadError = '初始化失败: $e';
       });
     }
+  }
+
+  Future<void> _checkXiaomiPermission() async {
+    final prefs = await SharedPreferences.getInstance();
+    final hideXiaomiTip = prefs.getBool('hide_xiaomi_sms_tip') ?? false;
+    if (hideXiaomiTip) return;
+
+    // 检查是否是小米手机
+    final brand = await _getDeviceBrand();
+    if (brand.toLowerCase().contains('xiaomi') || brand.toLowerCase().contains('redmi')) {
+      if (mounted) {
+        _showXiaomiPermissionDialog();
+      }
+    }
+  }
+
+  Future<String> _getDeviceBrand() async {
+    try {
+      const platform = MethodChannel('com.opentrack/device');
+      final brand = await platform.invokeMethod<String>('getBrand') ?? '';
+      return brand;
+    } catch (e) {
+      return '';
+    }
+  }
+
+  void _showXiaomiPermissionDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('小米手机权限提示'),
+        content: const Text(
+          '小米手机需要额外开启"通知类短信"权限才能读取取件码短信。\n\n'
+          '请在系统设置中找到本应用，开启"通知类短信"权限。',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () async {
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.setBool('hide_xiaomi_sms_tip', true);
+              if (ctx.mounted) Navigator.pop(ctx);
+            },
+            child: const Text('不再显示'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('稍后设置'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _loadData() async {

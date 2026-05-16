@@ -7,6 +7,7 @@ class SmsUtil {
 
     final messages = await query.querySms(
       kinds: [SmsQueryKind.inbox],
+      sort: true,
     );
 
     List<SmsModel> result = messages
