@@ -75,7 +75,7 @@ class MineScreen extends ConsumerWidget {
           const ListTile(
             leading: Icon(Icons.info_outline),
             title: Text('自由取'),
-            subtitle: Text('v0.3.0'),
+            subtitle: Text('v0.3.1'),
           ),
           ListTile(
             leading: const Icon(Icons.code),

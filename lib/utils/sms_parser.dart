@@ -25,7 +25,7 @@ class SmsParser {
   static final RegExp _addressPattern = RegExp(
     r'(地址|收货地址|送货地址|位于|放至|已到达|到达|已到|送达|到|已放入|已存放至|已存放|放入)'
     r'[\s\S]*?'
-    r'([一-鿿\w\s-]+?(?:门牌|驿站|快递点|门面|柜|,|，|。|$))',
+    r'([一-鿿\w\s-]+?(?:门牌|驿站|快递点|门面|柜|服务站|,|，|。|$))',
     caseSensitive: false,
   );
 
@@ -113,7 +113,7 @@ class SmsParser {
       }
     }
 
-    // Step 2: 自定义地址模式
+    // Step 2: 自定义地址规则
     for (final pattern in customAddressPatterns) {
       if (sms.toLowerCase().contains(pattern.toLowerCase())) {
         foundAddress = pattern;
@@ -121,7 +121,7 @@ class SmsParser {
       }
     }
 
-    // Step 3: 自定义码模式
+    // Step 3: 自定义码规则
     for (final pattern in customCodePatterns) {
       final match = pattern.firstMatch(sms);
       if (match != null) {
@@ -134,7 +134,9 @@ class SmsParser {
     if (foundAddress.isEmpty) {
       if (preferLockerAddress) {
         final lockerMatch = _lockerPattern.firstMatch(sms);
-        foundAddress = lockerMatch?.group(0) ?? '';
+        if (lockerMatch != null) {
+          foundAddress = lockerMatch.group(0) ?? '';
+        }
       }
       if (foundAddress.isEmpty) {
         String longestAddress = '';
@@ -152,16 +154,16 @@ class SmsParser {
     final lockerMatch = _lockerPattern.firstMatch(sms);
     final lockerNumber = lockerMatch?.group(1) ?? '';
 
-    // Step 6: 内置取件码提取
+    // Step 6: 内置取件码提取（取最后一个匹配）
     if (foundCode.isEmpty) {
       Match? lastMatch;
       for (final match in _codePattern.allMatches(sms)) {
         lastMatch = match;
       }
       if (lastMatch != null) {
-        final match = lastMatch.group(0);
-        final codes = match?.split(RegExp(r'[，,、]'));
-        foundCode = codes?.map((c) => c.trim()).join(', ') ?? '';
+        final rawMatch = lastMatch.group(0) ?? '';
+        final codes = rawMatch.split(RegExp(r'[，,、]'));
+        foundCode = codes.map((c) => c.trim()).join(', ');
         foundCode = foundCode.replaceAll(RegExp(r'[^A-Za-z0-9-, ]'), '');
       }
     }

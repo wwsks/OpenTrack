@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -22,6 +23,7 @@ class _PickupScreenState extends State<PickupScreen> {
   List<SmsModel> _failed = [];
   bool _isLoading = true;
   bool _hasPermission = false;
+  String? _loadError;
   final SmsParser _parser = SmsParser();
 
   @override
@@ -29,8 +31,6 @@ class _PickupScreenState extends State<PickupScreen> {
     super.initState();
     _init();
   }
-
-  String? _loadError;
 
   Future<void> _init() async {
     try {
@@ -338,6 +338,10 @@ class _ParcelCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final firstSms = parcel.smsDataList.isNotEmpty ? parcel.smsDataList.first.sms.body : '';
+    final parser = SmsParser();
+    final company = parser.extractCompany(firstSms);
+
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       child: Padding(
@@ -348,15 +352,23 @@ class _ParcelCard extends StatelessWidget {
             Row(
               children: [
                 Icon(
-                  parcel.num > 0 ? Icons.local_shipping : Icons.drafts_outlined,
+                  parcel.num > 0 ? Icons.location_on : Icons.drafts_outlined,
                   color: parcel.num > 0 ? Colors.blue : Colors.grey,
                   size: 20,
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Text(
-                    parcel.address,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        parcel.address,
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                      ),
+                      if (company.isNotEmpty)
+                        Text(company,
+                            style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                    ],
                   ),
                 ),
                 if (parcel.num > 0)
@@ -479,10 +491,24 @@ class _SmsListScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(timeStr,
-                            style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+                        Row(
+                          children: [
+                            Text(timeStr,
+                                style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+                            const Spacer(),
+                            InkWell(
+                              onTap: () {
+                                Clipboard.setData(ClipboardData(text: sms.body));
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('已复制短信内容')),
+                                );
+                              },
+                              child: const Icon(Icons.copy, size: 16, color: Colors.grey),
+                            ),
+                          ],
+                        ),
                         const SizedBox(height: 4),
-                        Text(sms.body, style: const TextStyle(fontSize: 13)),
+                        SelectableText(sms.body, style: const TextStyle(fontSize: 13)),
                         if (isFailed)
                           Padding(
                             padding: const EdgeInsets.only(top: 8),
@@ -506,6 +532,7 @@ class _SmsListScreen extends StatelessWidget {
 
   void _showAddRuleDialog(BuildContext context, SmsModel sms) {
     final codeController = TextEditingController();
+    final addressController = TextEditingController();
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -515,16 +542,53 @@ class _SmsListScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('短信内容：', style: TextStyle(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 4),
-              Text(sms.body, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-              const SizedBox(height: 12),
-              const Text('从短信中复制取件码部分：'),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Text('短信内容', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                        const Spacer(),
+                        InkWell(
+                          onTap: () {
+                            Clipboard.setData(ClipboardData(text: sms.body));
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('已复制')),
+                            );
+                          },
+                          child: const Icon(Icons.copy, size: 14, color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    SelectableText(sms.body, style: const TextStyle(fontSize: 12)),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text('取件码（从短信中复制）：'),
               const SizedBox(height: 4),
               TextField(
                 controller: codeController,
                 decoration: const InputDecoration(
                   hintText: '例如：3-2-5031',
+                  border: OutlineInputBorder(),
+                  isDense: true,
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Text('驿站地址（选填，从短信中复制）：'),
+              const SizedBox(height: 4),
+              TextField(
+                controller: addressController,
+                decoration: const InputDecoration(
+                  hintText: '例如：XX小区菜鸟驿站',
                   border: OutlineInputBorder(),
                   isDense: true,
                 ),
@@ -540,13 +604,23 @@ class _SmsListScreen extends StatelessWidget {
           TextButton(
             onPressed: () async {
               final code = codeController.text.trim();
+              final address = addressController.text.trim();
               if (code.isEmpty) return;
 
-              final rule = _generateCodeRule(sms.body, code);
               final prefs = await SharedPreferences.getInstance();
-              final patterns = prefs.getStringList('custom_code_patterns')?.toSet() ?? {};
-              patterns.add(rule);
-              await prefs.setStringList('custom_code_patterns', patterns.toList());
+
+              // 添加码规则
+              final codeRule = _generateCodeRule(sms.body, code);
+              final codePatterns = prefs.getStringList('custom_code_patterns')?.toSet() ?? {};
+              codePatterns.add(codeRule);
+              await prefs.setStringList('custom_code_patterns', codePatterns.toList());
+
+              // 添加地址规则（如果填了）
+              if (address.isNotEmpty) {
+                final addressPatterns = prefs.getStringList('custom_address_patterns')?.toSet() ?? {};
+                addressPatterns.add(address);
+                await prefs.setStringList('custom_address_patterns', addressPatterns.toList());
+              }
 
               if (ctx.mounted) {
                 Navigator.pop(ctx);

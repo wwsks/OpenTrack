@@ -56,10 +56,10 @@ class SmsProcessor {
 
       if (result.success && result.code.isNotEmpty) {
         final combinedKey = '${sms.id}_${sms.timestamp}';
-        final company = result.sender.isNotEmpty ? result.sender : '未知快递';
+        final address = result.address.isNotEmpty ? result.address : '未知地址';
 
         final smsData = SmsData(
-          address: company,
+          address: address,
           code: result.code,
           sms: sms,
           id: combinedKey,
@@ -67,7 +67,7 @@ class SmsProcessor {
         );
         successful.add(smsData);
 
-        final existingParcel = parcelsMap[company];
+        final existingParcel = parcelsMap[address];
         if (existingParcel != null) {
           final isDuplicate = existingParcel.smsDataList.any((existing) =>
               existing.code == smsData.code &&
@@ -76,8 +76,8 @@ class SmsProcessor {
             existingParcel.smsDataList.add(smsData);
           }
         } else {
-          parcelsMap[company] = ParcelData(
-            address: company,
+          parcelsMap[address] = ParcelData(
+            address: address,
             smsDataList: [smsData],
           );
         }
@@ -90,7 +90,14 @@ class SmsProcessor {
     failed.sort((a, b) => b.timestamp.compareTo(a.timestamp));
 
     for (final parcel in parcelsMap.values) {
-      parcel.smsDataList.sort((a, b) => b.sms.timestamp.compareTo(a.sms.timestamp));
+      parcel.smsDataList.sort((a, b) {
+        if (a.lockerNumber.isEmpty && b.lockerNumber.isNotEmpty) return 1;
+        if (a.lockerNumber.isNotEmpty && b.lockerNumber.isEmpty) return -1;
+        final aNum = int.tryParse(a.lockerNumber) ?? 999999;
+        final bNum = int.tryParse(b.lockerNumber) ?? 999999;
+        if (aNum != bNum) return aNum.compareTo(bNum);
+        return b.sms.timestamp.compareTo(a.sms.timestamp);
+      });
     }
 
     final completedIdsSet = completedIds.toSet();
