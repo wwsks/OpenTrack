@@ -82,7 +82,7 @@ class CustomerNotifier extends StateNotifier<String?> {
 
 class HideCompletedPickupsNotifier extends StateNotifier<bool> {
   final StorageService _storage;
-  HideCompletedPickupsNotifier(this._storage) : super(false) {
+  HideCompletedPickupsNotifier(this._storage) : super(true) {
     _load();
   }
 

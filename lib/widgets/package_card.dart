@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/package.dart';
+import '../utils/company_logo.dart';
 
 class PackageCard extends StatelessWidget {
   final Package package;
@@ -22,7 +23,7 @@ class PackageCard extends StatelessWidget {
           padding: const EdgeInsets.all(12),
           child: Row(
             children: [
-              _StatusIcon(status: package.status),
+              _CompanyLogoOrStatus(companyName: package.companyName, status: package.status),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -91,42 +92,32 @@ class PackageCard extends StatelessWidget {
   }
 }
 
-class _StatusIcon extends StatelessWidget {
+class _CompanyLogoOrStatus extends StatelessWidget {
+  final String companyName;
   final String status;
-  const _StatusIcon({required this.status});
+  const _CompanyLogoOrStatus({required this.companyName, required this.status});
 
   @override
   Widget build(BuildContext context) {
-    IconData icon;
-    Color color;
-    switch (status) {
-      case '0':
-        icon = Icons.local_shipping;
-        color = Colors.blue;
-      case '1':
-        icon = Icons.inventory_2;
-        color = Colors.orange;
-      case '3':
-        icon = Icons.check_circle;
-        color = Colors.green;
-      case '5':
-        icon = Icons.delivery_dining;
-        color = Colors.purple;
-      case '2':
-        icon = Icons.warning;
-        color = Colors.red;
-      default:
-        icon = Icons.help_outline;
-        color = Colors.grey;
-    }
     return Container(
       width: 40,
       height: 40,
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
+        color: _statusColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
       ),
-      child: Icon(icon, color: color, size: 24),
+      child: CompanyLogo.buildLogo(companyName, size: 28),
     );
+  }
+
+  Color get _statusColor {
+    switch (status) {
+      case '0': return Colors.blue;
+      case '1': return Colors.orange;
+      case '3': return Colors.green;
+      case '5': return Colors.purple;
+      case '2': return Colors.red;
+      default:  return Colors.grey;
+    }
   }
 }

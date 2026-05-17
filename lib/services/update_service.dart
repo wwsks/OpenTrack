@@ -16,7 +16,7 @@ class UpdateInfo {
 class UpdateService {
   static const String _repoOwner = 'wwsks';
   static const String _repoName = 'OpenTrack';
-  static const String _currentVersion = '0.3.2';
+  static const String _currentVersion = '0.3.3';
 
   static Future<UpdateInfo?> checkForUpdate() async {
     try {

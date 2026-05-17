@@ -9,6 +9,7 @@ import '../../models/sms_model.dart';
 import '../../utils/sms_parser.dart';
 import '../../utils/sms_processor.dart';
 import '../../utils/sms_util.dart';
+import '../../utils/company_logo.dart';
 
 class PickupScreen extends StatefulWidget {
   const PickupScreen({super.key});
@@ -113,7 +114,7 @@ class _PickupScreenState extends State<PickupScreen> {
     try {
       final prefs = await SharedPreferences.getInstance();
       final completedIds = prefs.getStringList('completedIds') ?? [];
-      final hideCompleted = prefs.getBool('hide_completed_pickups') ?? false;
+      final hideCompleted = prefs.getBool('hide_completed_pickups') ?? true;
 
       _parser.clearAllCustomPatterns();
       final result = await SmsProcessor.loadAndProcess(
@@ -201,23 +202,25 @@ class _PickupScreenState extends State<PickupScreen> {
             tooltip: '身份码',
             onSelected: _onMenuSelected,
             itemBuilder: (context) => [
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'taobao',
                 child: Row(
                   children: [
-                    Icon(Icons.shopping_bag_outlined, size: 20),
-                    SizedBox(width: 8),
-                    Text('淘宝身份码'),
+                    Image.asset('assets/logos/taobao.png', width: 20, height: 20, fit: BoxFit.contain,
+                      errorBuilder: (_, __, ___) => const Icon(Icons.shopping_bag_outlined, size: 20)),
+                    const SizedBox(width: 8),
+                    const Text('淘宝身份码'),
                   ],
                 ),
               ),
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'pdd',
                 child: Row(
                   children: [
-                    Icon(Icons.local_grocery_store_outlined, size: 20),
-                    SizedBox(width: 8),
-                    Text('拼多多身份码'),
+                    Image.asset('assets/logos/pinduoduo.png', width: 20, height: 20, fit: BoxFit.contain,
+                      errorBuilder: (_, __, ___) => const Icon(Icons.local_grocery_store_outlined, size: 20)),
+                    const SizedBox(width: 8),
+                    const Text('拼多多身份码'),
                   ],
                 ),
               ),
@@ -390,10 +393,6 @@ class _ParcelCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final firstSms = parcel.smsDataList.isNotEmpty ? parcel.smsDataList.first.sms.body : '';
-    final parser = SmsParser();
-    final company = parser.extractCompany(firstSms);
-
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       child: Padding(
@@ -410,17 +409,9 @@ class _ParcelCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        parcel.address,
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                      ),
-                      if (company.isNotEmpty)
-                        Text(company,
-                            style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
-                    ],
+                  child: Text(
+                    parcel.address,
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                   ),
                 ),
                 if (parcel.num > 0)
@@ -514,6 +505,10 @@ class _PickupCodeItem extends StatelessWidget {
                 ],
               ),
             ),
+            if (company.isNotEmpty) ...[
+              const SizedBox(width: 8),
+              CompanyLogo.buildLogo(company, size: 28),
+            ],
           ],
         ),
       ),

@@ -1,7 +1,7 @@
 name: opentrack
 description: "快递查询 Android 应用 - 通过快递100 API 查询快递状态"
 publish_to: 'none'
-version: 0.3.2+1
+version: 0.3.3+1
 
 environment:
   sdk: ^3.7.2
@@ -43,6 +43,9 @@ dependencies:
   # 权限管理
   permission_handler: ^11.3.1
 
+  # SVG 支持
+  flutter_svg: ^2.0.17
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -66,3 +69,4 @@ flutter:
 
   assets:
     - assets/data/
+    - assets/logos/

@@ -78,7 +78,7 @@ class StorageService {
 
   Future<bool> getHideCompletedPickups() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(AppConstants.keyHideCompletedPickups) ?? false;
+    return prefs.getBool(AppConstants.keyHideCompletedPickups) ?? true;
   }
 
   Future<void> setHideCompletedPickups(bool value) async {
