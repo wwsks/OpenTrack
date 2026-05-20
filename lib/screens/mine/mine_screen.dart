@@ -6,7 +6,6 @@ import '../../services/update_service.dart';
 import 'settings_screen.dart';
 import 'advanced_settings_screen.dart';
 import 'recycle_bin_screen.dart';
-import '../../animations/animations.dart';
 
 class MineScreen extends ConsumerWidget {
   const MineScreen({super.key});
@@ -22,52 +21,24 @@ class MineScreen extends ConsumerWidget {
         padding: const EdgeInsets.symmetric(vertical: 8),
         children: [
           // Header card
-          StaggeredListAnimation(
-            index: 0,
-            delay: const Duration(milliseconds: 60),
-            child: _buildHeader(context, hasApi, theme),
-          ),
+          _buildHeader(context, hasApi, theme),
           const SizedBox(height: 12),
 
           // Settings section
-          StaggeredListAnimation(
-            index: 1,
-            delay: const Duration(milliseconds: 60),
-            child: _SectionTitle(title: '设置'),
-          ),
-          StaggeredListAnimation(
-            index: 2,
-            delay: const Duration(milliseconds: 60),
-            child: _buildSettingsCard(context, hasApi),
-          ),
+          _SectionTitle(title: '设置'),
+          _buildSettingsCard(context, hasApi),
 
           const SizedBox(height: 12),
 
           // Other section
-          StaggeredListAnimation(
-            index: 5,
-            delay: const Duration(milliseconds: 60),
-            child: _SectionTitle(title: '其他'),
-          ),
-          StaggeredListAnimation(
-            index: 6,
-            delay: const Duration(milliseconds: 60),
-            child: _buildOtherCard(context, ref),
-          ),
+          _SectionTitle(title: '其他'),
+          _buildOtherCard(context, ref),
 
           const SizedBox(height: 12),
 
           // About section
-          StaggeredListAnimation(
-            index: 8,
-            delay: const Duration(milliseconds: 60),
-            child: _SectionTitle(title: '关于'),
-          ),
-          StaggeredListAnimation(
-            index: 9,
-            delay: const Duration(milliseconds: 60),
-            child: _buildAboutCard(context),
-          ),
+          _SectionTitle(title: '关于'),
+          _buildAboutCard(context),
 
           const SizedBox(height: 24),
         ],
@@ -170,7 +141,7 @@ class MineScreen extends ConsumerWidget {
             onTap: () {
               Navigator.push(
                 context,
-                SlideFadeRoute(page: const SettingsScreen()),
+                MaterialPageRoute(builder: (context) => const SettingsScreen()),
               );
             },
           ),
@@ -193,7 +164,7 @@ class MineScreen extends ConsumerWidget {
             onTap: () {
               Navigator.push(
                 context,
-                SlideFadeRoute(page: const AdvancedSettingsScreen()),
+                MaterialPageRoute(builder: (context) => const AdvancedSettingsScreen()),
               );
             },
           ),
@@ -215,7 +186,7 @@ class MineScreen extends ConsumerWidget {
             onTap: () {
               Navigator.push(
                 context,
-                SlideFadeRoute(page: const RecycleBinScreen()),
+                MaterialPageRoute(builder: (context) => const RecycleBinScreen()),
               );
             },
           ),
@@ -234,7 +205,7 @@ class MineScreen extends ConsumerWidget {
           ListTile(
             leading: const Icon(Icons.info_outline),
             title: const Text('自邮取'),
-            subtitle: const Text('v0.3.4'),
+            subtitle: const Text('v0.3.5'),
             trailing: IconButton(
               icon: const Icon(Icons.refresh),
               tooltip: '检查更新',

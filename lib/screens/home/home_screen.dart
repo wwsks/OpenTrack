@@ -5,7 +5,6 @@ import '../../providers/package_provider.dart';
 import '../../models/package.dart';
 import '../detail/detail_screen.dart';
 import '../../widgets/package_card.dart';
-import '../../animations/animations.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -134,64 +133,60 @@ class _PackageList extends ConsumerWidget {
         itemCount: packages.length,
         itemBuilder: (context, index) {
           final pkg = packages[index];
-          return StaggeredListAnimation(
-            index: index,
-            delay: const Duration(milliseconds: 40),
-            child: Dismissible(
-              key: Key(pkg.id),
-              direction: DismissDirection.endToStart,
-              dismissThresholds: const {
-                DismissDirection.endToStart: 0.3,
-              },
-              movementDuration: const Duration(milliseconds: 400),
-              resizeDuration: const Duration(milliseconds: 300),
-              background: Container(
-                alignment: Alignment.centerRight,
-                padding: const EdgeInsets.only(right: 24),
-                margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Colors.red.shade300, Colors.red.shade500],
-                    stops: const [0.0, 0.6],
-                  ),
-                  borderRadius: BorderRadius.circular(14),
+          return Dismissible(
+            key: Key(pkg.id),
+            direction: DismissDirection.endToStart,
+            dismissThresholds: const {
+              DismissDirection.endToStart: 0.3,
+            },
+            movementDuration: const Duration(milliseconds: 400),
+            resizeDuration: const Duration(milliseconds: 300),
+            background: Container(
+              alignment: Alignment.centerRight,
+              padding: const EdgeInsets.only(right: 24),
+              margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.red.shade300, Colors.red.shade500],
+                  stops: const [0.0, 0.6],
                 ),
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    Icon(Icons.delete_outline, color: Colors.white, size: 22),
-                    SizedBox(width: 8),
-                    Text('删除',
-                        style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600)),
-                  ],
-                ),
+                borderRadius: BorderRadius.circular(14),
               ),
-              confirmDismiss: (direction) async {
-                HapticFeedback.mediumImpact();
-                return true;
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Icon(Icons.delete_outline, color: Colors.white, size: 22),
+                  SizedBox(width: 8),
+                  Text('删除',
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600)),
+                ],
+              ),
+            ),
+            confirmDismiss: (direction) async {
+              HapticFeedback.mediumImpact();
+              return true;
+            },
+            onDismissed: (_) {
+              ref.read(allPackagesProvider.notifier).deletePackage(pkg.id);
+            },
+            child: GestureDetector(
+              onLongPress: () {
+                HapticFeedback.heavyImpact();
+                _showDeleteMenu(context, ref, pkg);
               },
-              onDismissed: (_) {
-                ref.read(allPackagesProvider.notifier).deletePackage(pkg.id);
-              },
-              child: GestureDetector(
-                onLongPress: () {
-                  HapticFeedback.heavyImpact();
-                  _showDeleteMenu(context, ref, pkg);
+              child: PackageCard(
+                package: pkg,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => DetailScreen(package: pkg),
+                    ),
+                  );
                 },
-                child: PackageCard(
-                  package: pkg,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      SlideFadeRoute(
-                        page: DetailScreen(package: pkg),
-                      ),
-                    );
-                  },
-                ),
               ),
             ),
           );

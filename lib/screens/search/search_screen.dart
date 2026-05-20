@@ -6,7 +6,6 @@ import '../../providers/settings_provider.dart';
 import '../../utils/company_util.dart';
 import '../detail/detail_screen.dart';
 import '../../models/package.dart';
-import '../../animations/animations.dart';
 
 class SearchScreen extends ConsumerStatefulWidget {
   const SearchScreen({super.key});
@@ -281,23 +280,19 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
             if (_error != null) ...[
               const SizedBox(height: 16),
-              StaggeredListAnimation(
-                index: 0,
-                delay: Duration.zero,
-                child: Card(
-                  color: Colors.red.shade50,
-                  child: Padding(
-                    padding: const EdgeInsets.all(14),
-                    child: Row(
-                      children: [
-                        Icon(Icons.error_outline, color: Colors.red.shade400, size: 20),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(_error!,
-                              style: TextStyle(color: Colors.red.shade700, fontSize: 14)),
-                        ),
-                      ],
-                    ),
+              Card(
+                color: Colors.red.shade50,
+                child: Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: Row(
+                    children: [
+                      Icon(Icons.error_outline, color: Colors.red.shade400, size: 20),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(_error!,
+                            style: TextStyle(color: Colors.red.shade700, fontSize: 14)),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -305,47 +300,41 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
             if (!_isBatchMode && _result != null) ...[
               const SizedBox(height: 16),
-              StaggeredListAnimation(
-                index: 0,
-                delay: Duration.zero,
-                child: _ResultCard(
-                  trackingNumber: _trackingController.text.trim(),
-                  info: _result!,
-                  companyName:
-                      _selectedCompany?.name ?? _getCompanyName(_result!.companyCode),
-                  onAdd: autoSave ? null : _addToMyPackages,
-                  onViewDetail: () {
-                    final pkg = Package(
-                      id: '',
-                      trackingNumber: _trackingController.text.trim(),
-                      companyCode: _result!.companyCode,
-                      companyName:
-                          _selectedCompany?.name ?? _getCompanyName(_result!.companyCode),
-                      remark: _remarkController.text.trim().isNotEmpty
-                          ? _remarkController.text.trim()
-                          : null,
-                    );
-                    Navigator.push(
-                      context,
-                      SlideFadeRoute(page: DetailScreen(
+              _ResultCard(
+                trackingNumber: _trackingController.text.trim(),
+                info: _result!,
+                companyName:
+                    _selectedCompany?.name ?? _getCompanyName(_result!.companyCode),
+                onAdd: autoSave ? null : _addToMyPackages,
+                onViewDetail: () {
+                  final pkg = Package(
+                    id: '',
+                    trackingNumber: _trackingController.text.trim(),
+                    companyCode: _result!.companyCode,
+                    companyName:
+                        _selectedCompany?.name ?? _getCompanyName(_result!.companyCode),
+                    remark: _remarkController.text.trim().isNotEmpty
+                        ? _remarkController.text.trim()
+                        : null,
+                  );
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => DetailScreen(
                         package: pkg,
                         trackingInfo: _result!,
-                      )),
-                    );
-                  },
-                ),
+                      ),
+                    ),
+                  );
+                },
               ),
             ],
 
             if (_isBatchMode && _batchResults.isNotEmpty) ...[
               const SizedBox(height: 16),
-              StaggeredListAnimation(
-                index: 0,
-                delay: Duration.zero,
-                child: _BatchResultList(
-                  results: _batchResults,
-                  getCompanyName: _getCompanyName,
-                ),
+              _BatchResultList(
+                results: _batchResults,
+                getCompanyName: _getCompanyName,
               ),
             ],
           ],
@@ -649,13 +638,9 @@ class _BatchResultList extends StatelessWidget {
             Text('查询结果 (${results.where((r) => r.info != null).length}/${results.length} 成功)',
                 style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
             const Divider(height: 20),
-            ...results.asMap().entries.map((entry) {
-              final i = entry.key;
-              final r = entry.value;
-              return StaggeredListAnimation(
-                index: i,
-                delay: const Duration(milliseconds: 40),
-                child: Padding(
+              ...results.asMap().entries.map((entry) {
+                final r = entry.value;
+                return Padding(
                   padding: const EdgeInsets.symmetric(vertical: 6),
                   child: Row(
                     children: [
@@ -688,9 +673,8 @@ class _BatchResultList extends StatelessWidget {
                       ),
                     ],
                   ),
-                ),
-              );
-            }),
+                );
+              }),
           ],
         ),
       ),

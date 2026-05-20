@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../models/package.dart';
 import '../utils/company_logo.dart';
 import '../config/theme.dart';
-import '../animations/pressable_card.dart';
 
 class PackageCard extends StatelessWidget {
   final Package package;
@@ -16,8 +15,9 @@ class PackageCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return PressableCard(
+    return InkWell(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
       child: Card(
         child: Padding(
           padding: const EdgeInsets.all(14),

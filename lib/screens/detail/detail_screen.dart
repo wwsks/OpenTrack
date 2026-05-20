@@ -5,7 +5,6 @@ import '../../models/package.dart';
 import '../../models/tracking_info.dart';
 import '../../providers/package_provider.dart';
 import '../../config/theme.dart';
-import '../../animations/animations.dart';
 
 class DetailScreen extends ConsumerStatefulWidget {
   final Package package;
@@ -71,52 +70,36 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            StaggeredListAnimation(
-              index: 0,
-              delay: const Duration(milliseconds: 80),
-              child: _InfoCard(package: widget.package),
-            ),
+            _InfoCard(package: widget.package),
             const SizedBox(height: 12),
             if (_isLoading)
-              StaggeredListAnimation(
-                index: 1,
-                delay: const Duration(milliseconds: 80),
-                child: Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(32),
-                    child: Center(
-                      child: Column(
-                        children: [
-                          const SizedBox(
-                            width: 28,
-                            height: 28,
-                            child: CircularProgressIndicator(strokeWidth: 2.5),
-                          ),
-                          const SizedBox(height: 12),
-                          Text('正在查询...',
-                              style: TextStyle(color: Colors.grey.shade400, fontSize: 14)),
-                        ],
-                      ),
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(32),
+                  child: Center(
+                    child: Column(
+                      children: [
+                        const SizedBox(
+                          width: 28,
+                          height: 28,
+                          child: CircularProgressIndicator(strokeWidth: 2.5),
+                        ),
+                        const SizedBox(height: 12),
+                        Text('正在查询...',
+                            style: TextStyle(color: Colors.grey.shade400, fontSize: 14)),
+                      ],
                     ),
                   ),
                 ),
               )
             else if (_trackingInfo != null)
-              StaggeredListAnimation(
-                index: 1,
-                delay: const Duration(milliseconds: 80),
-                child: _TimelineCard(info: _trackingInfo!),
-              )
+              _TimelineCard(info: _trackingInfo!)
             else
-              StaggeredListAnimation(
-                index: 1,
-                delay: const Duration(milliseconds: 80),
-                child: Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(32),
-                    child: Center(
-                      child: Text('暂无轨迹信息', style: TextStyle(color: Colors.grey.shade400)),
-                    ),
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(32),
+                  child: Center(
+                    child: Text('暂无轨迹信息', style: TextStyle(color: Colors.grey.shade400)),
                   ),
                 ),
               ),
@@ -288,16 +271,11 @@ class _TimelineCard extends StatelessWidget {
                 final event = entry.value;
                 final isFirst = i == 0;
                 final isLast = i == info.data.length - 1;
-                return StaggeredListAnimation(
-                  index: i,
-                  delay: const Duration(milliseconds: 60),
-                  slideOffset: const Offset(0.06, 0),
-                  child: _TimelineItem(
-                    context: event.context,
-                    time: event.ftime,
-                    isFirst: isFirst,
-                    isLast: isLast,
-                  ),
+                return _TimelineItem(
+                  context: event.context,
+                  time: event.ftime,
+                  isFirst: isFirst,
+                  isLast: isLast,
                 );
               }),
           ],

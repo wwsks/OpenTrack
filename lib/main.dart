@@ -9,7 +9,6 @@ import 'screens/mine/mine_screen.dart';
 import 'services/notification_service.dart';
 import 'services/storage_service.dart';
 import 'services/update_service.dart';
-import 'animations/animations.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -59,12 +58,8 @@ class MainScreen extends ConsumerStatefulWidget {
   ConsumerState<MainScreen> createState() => _MainScreenState();
 }
 
-class _MainScreenState extends ConsumerState<MainScreen>
-    with TickerProviderStateMixin {
+class _MainScreenState extends ConsumerState<MainScreen> {
   int _currentIndex = 0;
-  late AnimationController _pageTransitionController;
-  late Animation<double> _pageFadeAnimation;
-  late Animation<Offset> _pageSlideAnimation;
 
   final _screens = const [
     PickupScreen(),
@@ -73,64 +68,17 @@ class _MainScreenState extends ConsumerState<MainScreen>
     MineScreen(),
   ];
 
-  static const _navItems = [
-    NavBarItem(
-      icon: Icons.qr_code_outlined,
-      activeIcon: Icons.qr_code,
-      label: '取件码',
-    ),
-    NavBarItem(
-      icon: Icons.local_shipping_outlined,
-      activeIcon: Icons.local_shipping,
-      label: '快递列表',
-    ),
-    NavBarItem(
-      icon: Icons.search_outlined,
-      activeIcon: Icons.search,
-      label: '查快递',
-    ),
-    NavBarItem(
-      icon: Icons.person_outline,
-      activeIcon: Icons.person,
-      label: '我的',
-    ),
-  ];
-
   @override
   void initState() {
     super.initState();
-    _pageTransitionController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 300),
-    );
-    _pageFadeAnimation = CurvedAnimation(
-      parent: _pageTransitionController,
-      curve: Curves.easeOutCubic,
-    );
-    _pageSlideAnimation = Tween<Offset>(
-      begin: const Offset(0.04, 0),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _pageTransitionController,
-      curve: Curves.easeOutCubic,
-    ));
-    _pageTransitionController.value = 1.0;
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkForUpdate();
     });
   }
 
-  @override
-  void dispose() {
-    _pageTransitionController.dispose();
-    super.dispose();
-  }
-
   void _onPageChanged(int index) {
     if (index == _currentIndex) return;
     setState(() => _currentIndex = index);
-    _pageTransitionController.forward(from: 0.0);
   }
 
   Future<void> _checkForUpdate() async {
@@ -178,20 +126,36 @@ class _MainScreenState extends ConsumerState<MainScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: FadeTransition(
-        opacity: _pageFadeAnimation,
-        child: SlideTransition(
-          position: _pageSlideAnimation,
-          child: IndexedStack(
-            index: _currentIndex,
-            children: _screens,
-          ),
-        ),
+      body: IndexedStack(
+        index: _currentIndex,
+        children: _screens,
       ),
-      bottomNavigationBar: AnimatedNavBar(
+      bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: _onPageChanged,
-        items: _navItems,
+        type: BottomNavigationBarType.fixed,
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.qr_code_outlined),
+            activeIcon: Icon(Icons.qr_code),
+            label: '取件码',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.local_shipping_outlined),
+            activeIcon: Icon(Icons.local_shipping),
+            label: '快递列表',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.search_outlined),
+            activeIcon: Icon(Icons.search),
+            label: '查快递',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person_outline),
+            activeIcon: Icon(Icons.person),
+            label: '我的',
+          ),
+        ],
       ),
     );
   }

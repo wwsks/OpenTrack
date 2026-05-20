@@ -10,7 +10,6 @@ import '../../utils/sms_parser.dart';
 import '../../utils/sms_processor.dart';
 import '../../utils/sms_util.dart';
 import '../../utils/company_logo.dart';
-import '../../animations/animations.dart';
 
 class PickupScreen extends StatefulWidget {
   const PickupScreen({super.key});
@@ -320,13 +319,9 @@ class _PickupScreenState extends State<PickupScreen> {
         itemCount: _parcels.length,
         itemBuilder: (context, index) {
           final parcel = _parcels[index];
-          return StaggeredListAnimation(
-            index: index,
-            delay: const Duration(milliseconds: 50),
-            child: _ParcelCard(
-              parcel: parcel,
-              onToggle: _toggleCompleted,
-            ),
+          return _ParcelCard(
+            parcel: parcel,
+            onToggle: _toggleCompleted,
           );
         },
       ),
@@ -337,11 +332,11 @@ class _PickupScreenState extends State<PickupScreen> {
     switch (value) {
       case 'success':
         Navigator.push(context,
-            SlideFadeRoute(page: _SmsListScreen(title: '解析成功', smsList: _successful.map((s) => s.sms).toList(), isFailed: false)));
+            MaterialPageRoute(builder: (context) => _SmsListScreen(title: '解析成功', smsList: _successful.map((s) => s.sms).toList(), isFailed: false)));
         break;
       case 'failed':
         Navigator.push(context,
-            SlideFadeRoute(page: _SmsListScreen(title: '解析失败', smsList: _failed, isFailed: true, parser: _parser, onRuleAdded: _loadData)));
+            MaterialPageRoute(builder: (context) => _SmsListScreen(title: '解析失败', smsList: _failed, isFailed: true, parser: _parser, onRuleAdded: _loadData)));
         break;
     }
   }
@@ -629,51 +624,47 @@ class _SmsListScreen extends StatelessWidget {
                     '${time.month.toString().padLeft(2, '0')}-${time.day.toString().padLeft(2, '0')} '
                     '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
 
-                return StaggeredListAnimation(
-                  index: index,
-                  delay: const Duration(milliseconds: 30),
-                  child: Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(14),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Text(timeStr,
-                                  style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
-                              const Spacer(),
-                              InkWell(
-                                onTap: () {
-                                  Clipboard.setData(ClipboardData(text: sms.body));
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('已复制短信内容')),
-                                  );
-                                },
-                                borderRadius: BorderRadius.circular(8),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(4),
-                                  child: Icon(Icons.copy, size: 16, color: Colors.grey.shade400),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 6),
-                          SelectableText(sms.body, style: const TextStyle(fontSize: 13)),
-                          if (isFailed)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 8),
-                              child: Align(
-                                alignment: Alignment.centerRight,
-                                child: TextButton.icon(
-                                  icon: const Icon(Icons.add, size: 16),
-                                  label: const Text('添加规则'),
-                                  onPressed: () => _showAddRuleDialog(context, sms),
-                                ),
+                return Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(14),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(timeStr,
+                                style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+                            const Spacer(),
+                            InkWell(
+                              onTap: () {
+                                Clipboard.setData(ClipboardData(text: sms.body));
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('已复制短信内容')),
+                                );
+                              },
+                              borderRadius: BorderRadius.circular(8),
+                              child: Padding(
+                                padding: const EdgeInsets.all(4),
+                                child: Icon(Icons.copy, size: 16, color: Colors.grey.shade400),
                               ),
                             ),
-                        ],
-                      ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        SelectableText(sms.body, style: const TextStyle(fontSize: 13)),
+                        if (isFailed)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: Align(
+                              alignment: Alignment.centerRight,
+                              child: TextButton.icon(
+                                icon: const Icon(Icons.add, size: 16),
+                                label: const Text('添加规则'),
+                                onPressed: () => _showAddRuleDialog(context, sms),
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                   ),
                 );
