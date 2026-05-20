@@ -30,3 +30,6 @@ sms_parsing_deep_dive.md
 implementation_guide.md
 sms_parser_dart.md
 sms_parser_flutter_guide.md
+
+# Git worktrees
+.worktrees/
