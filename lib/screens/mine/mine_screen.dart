@@ -6,6 +6,7 @@ import '../../services/update_service.dart';
 import 'settings_screen.dart';
 import 'advanced_settings_screen.dart';
 import 'recycle_bin_screen.dart';
+import '../../animations/animations.dart';
 
 class MineScreen extends ConsumerWidget {
   const MineScreen({super.key});
@@ -13,13 +14,153 @@ class MineScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final hasApi = ref.watch(hasApiConfigProvider);
+    final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(title: const Text('我的')),
       body: ListView(
+        padding: const EdgeInsets.symmetric(vertical: 8),
         children: [
-          const SizedBox(height: 16),
-          _SectionTitle(title: '设置'),
+          // Header card
+          StaggeredListAnimation(
+            index: 0,
+            delay: const Duration(milliseconds: 60),
+            child: _buildHeader(context, hasApi, theme),
+          ),
+          const SizedBox(height: 12),
+
+          // Settings section
+          StaggeredListAnimation(
+            index: 1,
+            delay: const Duration(milliseconds: 60),
+            child: _SectionTitle(title: '设置'),
+          ),
+          StaggeredListAnimation(
+            index: 2,
+            delay: const Duration(milliseconds: 60),
+            child: _buildSettingsCard(context, hasApi),
+          ),
+
+          const SizedBox(height: 12),
+
+          // Other section
+          StaggeredListAnimation(
+            index: 5,
+            delay: const Duration(milliseconds: 60),
+            child: _SectionTitle(title: '其他'),
+          ),
+          StaggeredListAnimation(
+            index: 6,
+            delay: const Duration(milliseconds: 60),
+            child: _buildOtherCard(context, ref),
+          ),
+
+          const SizedBox(height: 12),
+
+          // About section
+          StaggeredListAnimation(
+            index: 8,
+            delay: const Duration(milliseconds: 60),
+            child: _SectionTitle(title: '关于'),
+          ),
+          StaggeredListAnimation(
+            index: 9,
+            delay: const Duration(milliseconds: 60),
+            child: _buildAboutCard(context),
+          ),
+
+          const SizedBox(height: 24),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context, bool hasApi, ThemeData theme) {
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 12),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Row(
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    theme.colorScheme.primary,
+                    theme.colorScheme.primary.withValues(alpha: 0.7),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: theme.colorScheme.primary.withValues(alpha: 0.3),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.local_shipping,
+                color: Colors.white,
+                size: 28,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    '自邮取',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: hasApi ? Colors.green : Colors.orange,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        hasApi ? 'API 已配置' : 'API 未配置',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: hasApi ? Colors.green : Colors.orange,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right,
+              color: Colors.grey.shade400,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSettingsCard(BuildContext context, bool hasApi) {
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 12),
+      child: Column(
+        children: [
           ListTile(
             leading: Icon(Icons.vpn_key,
                 color: hasApi ? Colors.green : Colors.orange),
@@ -29,11 +170,11 @@ class MineScreen extends ConsumerWidget {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                SlideFadeRoute(page: const SettingsScreen()),
               );
             },
           ),
-          const Divider(height: 1),
+          const Divider(height: 1, indent: 56),
           ListTile(
             leading: const Icon(Icons.help_outline),
             title: const Text('如何获取快递100 API'),
@@ -43,7 +184,7 @@ class MineScreen extends ConsumerWidget {
               _showApiGuideDialog(context);
             },
           ),
-          const Divider(height: 1),
+          const Divider(height: 1, indent: 56),
           ListTile(
             leading: const Icon(Icons.settings),
             title: const Text('高级设置'),
@@ -52,12 +193,20 @@ class MineScreen extends ConsumerWidget {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                    builder: (_) => const AdvancedSettingsScreen()),
+                SlideFadeRoute(page: const AdvancedSettingsScreen()),
               );
             },
           ),
-          _SectionTitle(title: '其他'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOtherCard(BuildContext context, WidgetRef ref) {
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 12),
+      child: Column(
+        children: [
           ListTile(
             leading: const Icon(Icons.delete_outline),
             title: const Text('回收站'),
@@ -66,13 +215,22 @@ class MineScreen extends ConsumerWidget {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const RecycleBinScreen()),
+                SlideFadeRoute(page: const RecycleBinScreen()),
               );
             },
           ),
-          const Divider(height: 1),
+          const Divider(height: 1, indent: 56),
           _AutoCheckUpdateTile(),
-          _SectionTitle(title: '关于'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAboutCard(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 12),
+      child: Column(
+        children: [
           ListTile(
             leading: const Icon(Icons.info_outline),
             title: const Text('自邮取'),
@@ -129,6 +287,7 @@ class MineScreen extends ConsumerWidget {
               },
             ),
           ),
+          const Divider(height: 1, indent: 56),
           ListTile(
             leading: const Icon(Icons.code),
             title: const Text('GitHub 项目地址'),
@@ -222,13 +381,14 @@ class _SectionTitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+      padding: const EdgeInsets.fromLTRB(28, 4, 16, 6),
       child: Text(
         title,
         style: TextStyle(
           fontSize: 13,
-          color: Colors.grey.shade600,
-          fontWeight: FontWeight.w500,
+          color: Colors.grey.shade500,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.5,
         ),
       ),
     );

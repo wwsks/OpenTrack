@@ -10,6 +10,7 @@ import '../../utils/sms_parser.dart';
 import '../../utils/sms_processor.dart';
 import '../../utils/sms_util.dart';
 import '../../utils/company_logo.dart';
+import '../../animations/animations.dart';
 
 class PickupScreen extends StatefulWidget {
   const PickupScreen({super.key});
@@ -59,7 +60,6 @@ class _PickupScreenState extends State<PickupScreen> {
     final hideXiaomiTip = prefs.getBool('hide_xiaomi_sms_tip') ?? false;
     if (hideXiaomiTip) return;
 
-    // 检查是否是小米手机
     final brand = await _getDeviceBrand();
     if (brand.toLowerCase().contains('xiaomi') || brand.toLowerCase().contains('redmi')) {
       if (mounted) {
@@ -150,6 +150,7 @@ class _PickupScreenState extends State<PickupScreen> {
   }
 
   Future<void> _toggleCompleted(SmsData smsData) async {
+    HapticFeedback.lightImpact();
     final prefs = await SharedPreferences.getInstance();
     final set = prefs.getStringList('completedIds')?.toSet() ?? {};
     final key = smsData.id;
@@ -238,14 +239,15 @@ class _PickupScreenState extends State<PickupScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.sms_failed_outlined, size: 64, color: Colors.grey),
+            Icon(Icons.sms_failed_outlined, size: 64, color: Colors.grey.shade300),
             const SizedBox(height: 16),
-            const Text('需要短信权限才能读取取件码',
-                style: TextStyle(color: Colors.grey, fontSize: 16)),
-            const SizedBox(height: 16),
-            ElevatedButton(
+            Text('需要短信权限才能读取取件码',
+                style: TextStyle(color: Colors.grey.shade400, fontSize: 16)),
+            const SizedBox(height: 20),
+            ElevatedButton.icon(
               onPressed: () => openAppSettings(),
-              child: const Text('去设置开启权限'),
+              icon: const Icon(Icons.settings),
+              label: const Text('去设置开启权限'),
             ),
           ],
         ),
@@ -253,7 +255,21 @@ class _PickupScreenState extends State<PickupScreen> {
     }
 
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(
+              width: 32,
+              height: 32,
+              child: CircularProgressIndicator(strokeWidth: 2.5),
+            ),
+            const SizedBox(height: 16),
+            Text('正在读取短信...',
+                style: TextStyle(color: Colors.grey.shade400, fontSize: 14)),
+          ],
+        ),
+      );
     }
 
     if (_loadError != null) {
@@ -265,9 +281,10 @@ class _PickupScreenState extends State<PickupScreen> {
             const SizedBox(height: 16),
             Text(_loadError!, style: const TextStyle(color: Colors.red, fontSize: 14)),
             const SizedBox(height: 16),
-            ElevatedButton(
+            ElevatedButton.icon(
               onPressed: _loadData,
-              child: const Text('重试'),
+              icon: const Icon(Icons.refresh),
+              label: const Text('重试'),
             ),
           ],
         ),
@@ -278,15 +295,15 @@ class _PickupScreenState extends State<PickupScreen> {
       return RefreshIndicator(
         onRefresh: _loadData,
         child: ListView(
-          children: const [
-            SizedBox(height: 200),
+          children: [
+            const SizedBox(height: 200),
             Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.inbox_outlined, size: 64, color: Colors.grey),
-                  SizedBox(height: 16),
-                  Text('暂无取件码', style: TextStyle(color: Colors.grey, fontSize: 16)),
+                  Icon(Icons.inbox_outlined, size: 64, color: Colors.grey.shade300),
+                  const SizedBox(height: 16),
+                  Text('暂无取件码', style: TextStyle(color: Colors.grey.shade400, fontSize: 16)),
                 ],
               ),
             ),
@@ -297,14 +314,19 @@ class _PickupScreenState extends State<PickupScreen> {
 
     return RefreshIndicator(
       onRefresh: _loadData,
+      displacement: 40,
       child: ListView.builder(
         padding: const EdgeInsets.symmetric(vertical: 8),
         itemCount: _parcels.length,
         itemBuilder: (context, index) {
           final parcel = _parcels[index];
-          return _ParcelCard(
-            parcel: parcel,
-            onToggle: _toggleCompleted,
+          return StaggeredListAnimation(
+            index: index,
+            delay: const Duration(milliseconds: 50),
+            child: _ParcelCard(
+              parcel: parcel,
+              onToggle: _toggleCompleted,
+            ),
           );
         },
       ),
@@ -315,11 +337,11 @@ class _PickupScreenState extends State<PickupScreen> {
     switch (value) {
       case 'success':
         Navigator.push(context,
-            MaterialPageRoute(builder: (_) => _SmsListScreen(title: '解析成功', smsList: _successful.map((s) => s.sms).toList(), isFailed: false)));
+            SlideFadeRoute(page: _SmsListScreen(title: '解析成功', smsList: _successful.map((s) => s.sms).toList(), isFailed: false)));
         break;
       case 'failed':
         Navigator.push(context,
-            MaterialPageRoute(builder: (_) => _SmsListScreen(title: '解析失败', smsList: _failed, isFailed: true, parser: _parser, onRuleAdded: _loadData)));
+            SlideFadeRoute(page: _SmsListScreen(title: '解析失败', smsList: _failed, isFailed: true, parser: _parser, onRuleAdded: _loadData)));
         break;
     }
   }
@@ -394,41 +416,45 @@ class _ParcelCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                Icon(
-                  parcel.num > 0 ? Icons.location_on : Icons.drafts_outlined,
-                  color: parcel.num > 0 ? Colors.blue : Colors.grey,
-                  size: 20,
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 300),
+                  child: Icon(
+                    parcel.num > 0 ? Icons.location_on : Icons.drafts_outlined,
+                    key: ValueKey(parcel.num > 0),
+                    color: parcel.num > 0 ? Colors.blue : Colors.grey,
+                    size: 20,
+                  ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     parcel.address,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
                   ),
                 ),
                 if (parcel.num > 0)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
                     decoration: BoxDecoration(
                       color: Colors.orange,
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
                       '${parcel.num}',
-                      style: const TextStyle(color: Colors.white, fontSize: 12),
+                      style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
                     ),
                   ),
               ],
             ),
-            const Divider(height: 16),
+            const Divider(height: 20),
             ...parcel.smsDataList.map((smsData) => _PickupCodeItem(
                   smsData: smsData,
                   onToggle: () => onToggle(smsData),
@@ -440,20 +466,47 @@ class _ParcelCard extends StatelessWidget {
   }
 }
 
-class _PickupCodeItem extends StatelessWidget {
+class _PickupCodeItem extends StatefulWidget {
   final SmsData smsData;
   final VoidCallback onToggle;
 
   const _PickupCodeItem({required this.smsData, required this.onToggle});
 
+  @override
+  State<_PickupCodeItem> createState() => _PickupCodeItemState();
+}
+
+class _PickupCodeItemState extends State<_PickupCodeItem>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _checkController;
+  late Animation<double> _checkScaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+    _checkScaleAnimation = Tween<double>(begin: 1.0, end: 1.3).animate(
+      CurvedAnimation(parent: _checkController, curve: Curves.easeOutBack),
+    );
+  }
+
+  @override
+  void dispose() {
+    _checkController.dispose();
+    super.dispose();
+  }
+
   String _getCompany() {
     final parser = SmsParser();
-    return parser.extractCompany(smsData.sms.body);
+    return parser.extractCompany(widget.smsData.sms.body);
   }
 
   @override
   Widget build(BuildContext context) {
-    final time = DateTime.fromMillisecondsSinceEpoch(smsData.sms.timestamp);
+    final time = DateTime.fromMillisecondsSinceEpoch(widget.smsData.sms.timestamp);
     final now = DateTime.now();
     String timeStr;
     if (time.year == now.year && time.month == now.month && time.day == now.day) {
@@ -466,32 +519,61 @@ class _PickupCodeItem extends StatelessWidget {
     final company = _getCompany();
 
     return InkWell(
-      onTap: onToggle,
-      borderRadius: BorderRadius.circular(8),
+      onTap: () {
+        _checkController.forward(from: 0).then((_) {
+          _checkController.reverse();
+        });
+        widget.onToggle();
+      },
+      borderRadius: BorderRadius.circular(10),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 6),
+        padding: const EdgeInsets.symmetric(vertical: 8),
         child: Row(
           children: [
-            Icon(
-              smsData.isCompleted ? Icons.check_circle : Icons.radio_button_unchecked,
-              size: 22,
-              color: smsData.isCompleted ? Colors.green : Colors.orange,
+            AnimatedBuilder(
+              animation: _checkScaleAnimation,
+              builder: (context, child) {
+                return Transform.scale(
+                  scale: _checkScaleAnimation.value,
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 250),
+                    transitionBuilder: (child, animation) {
+                      return ScaleTransition(scale: animation, child: child);
+                    },
+                    child: Icon(
+                      widget.smsData.isCompleted
+                          ? Icons.check_circle
+                          : Icons.radio_button_unchecked,
+                      key: ValueKey(widget.smsData.isCompleted),
+                      size: 24,
+                      color: widget.smsData.isCompleted
+                          ? Colors.green
+                          : Colors.orange,
+                    ),
+                  ),
+                );
+              },
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      Text(
-                        SmsUtil.formatPickupCode(smsData.code),
+                      AnimatedDefaultTextStyle(
+                        duration: const Duration(milliseconds: 300),
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: smsData.isCompleted ? Colors.grey : null,
-                          decoration: smsData.isCompleted ? TextDecoration.lineThrough : null,
+                          color: widget.smsData.isCompleted
+                              ? Colors.grey
+                              : null,
+                          decoration: widget.smsData.isCompleted
+                              ? TextDecoration.lineThrough
+                              : null,
                         ),
+                        child: Text(SmsUtil.formatPickupCode(widget.smsData.code)),
                       ),
                       if (company.isNotEmpty) ...[
                         const SizedBox(width: 8),
@@ -501,7 +583,7 @@ class _PickupCodeItem extends StatelessWidget {
                     ],
                   ),
                   Text(timeStr,
-                      style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+                      style: TextStyle(fontSize: 12, color: Colors.grey.shade400)),
                 ],
               ),
             ),
@@ -536,7 +618,7 @@ class _SmsListScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: Text('$title (${smsList.length})')),
       body: smsList.isEmpty
-          ? const Center(child: Text('暂无数据', style: TextStyle(color: Colors.grey)))
+          ? Center(child: Text('暂无数据', style: TextStyle(color: Colors.grey.shade400)))
           : ListView.builder(
               padding: const EdgeInsets.symmetric(vertical: 8),
               itemCount: smsList.length,
@@ -547,44 +629,51 @@ class _SmsListScreen extends StatelessWidget {
                     '${time.month.toString().padLeft(2, '0')}-${time.day.toString().padLeft(2, '0')} '
                     '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
 
-                return Card(
-                  margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Text(timeStr,
-                                style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
-                            const Spacer(),
-                            InkWell(
-                              onTap: () {
-                                Clipboard.setData(ClipboardData(text: sms.body));
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('已复制短信内容')),
-                                );
-                              },
-                              child: const Icon(Icons.copy, size: 16, color: Colors.grey),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        SelectableText(sms.body, style: const TextStyle(fontSize: 13)),
-                        if (isFailed)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 8),
-                            child: Align(
-                              alignment: Alignment.centerRight,
-                              child: TextButton.icon(
-                                icon: const Icon(Icons.add, size: 16),
-                                label: const Text('添加规则'),
-                                onPressed: () => _showAddRuleDialog(context, sms),
+                return StaggeredListAnimation(
+                  index: index,
+                  delay: const Duration(milliseconds: 30),
+                  child: Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(14),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(timeStr,
+                                  style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+                              const Spacer(),
+                              InkWell(
+                                onTap: () {
+                                  Clipboard.setData(ClipboardData(text: sms.body));
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('已复制短信内容')),
+                                  );
+                                },
+                                borderRadius: BorderRadius.circular(8),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(4),
+                                  child: Icon(Icons.copy, size: 16, color: Colors.grey.shade400),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          SelectableText(sms.body, style: const TextStyle(fontSize: 13)),
+                          if (isFailed)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 8),
+                              child: Align(
+                                alignment: Alignment.centerRight,
+                                child: TextButton.icon(
+                                  icon: const Icon(Icons.add, size: 16),
+                                  label: const Text('添加规则'),
+                                  onPressed: () => _showAddRuleDialog(context, sms),
+                                ),
                               ),
                             ),
-                          ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 );
@@ -606,10 +695,10 @@ class _SmsListScreen extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   color: Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(10),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -625,7 +714,11 @@ class _SmsListScreen extends StatelessWidget {
                               const SnackBar(content: Text('已复制')),
                             );
                           },
-                          child: const Icon(Icons.copy, size: 14, color: Colors.grey),
+                          borderRadius: BorderRadius.circular(4),
+                          child: const Padding(
+                            padding: EdgeInsets.all(4),
+                            child: Icon(Icons.copy, size: 14, color: Colors.grey),
+                          ),
                         ),
                       ],
                     ),
@@ -641,7 +734,6 @@ class _SmsListScreen extends StatelessWidget {
                 controller: codeController,
                 decoration: const InputDecoration(
                   hintText: '例如：3-2-5031',
-                  border: OutlineInputBorder(),
                   isDense: true,
                 ),
               ),
@@ -652,7 +744,6 @@ class _SmsListScreen extends StatelessWidget {
                 controller: addressController,
                 decoration: const InputDecoration(
                   hintText: '例如：XX小区菜鸟驿站',
-                  border: OutlineInputBorder(),
                   isDense: true,
                 ),
               ),
@@ -672,13 +763,11 @@ class _SmsListScreen extends StatelessWidget {
 
               final prefs = await SharedPreferences.getInstance();
 
-              // 添加码规则
               final codeRule = _generateCodeRule(sms.body, code);
               final codePatterns = prefs.getStringList('custom_code_patterns')?.toSet() ?? {};
               codePatterns.add(codeRule);
               await prefs.setStringList('custom_code_patterns', codePatterns.toList());
 
-              // 添加地址规则（如果填了）
               if (address.isNotEmpty) {
                 final addressPatterns = prefs.getStringList('custom_address_patterns')?.toSet() ?? {};
                 addressPatterns.add(address);
