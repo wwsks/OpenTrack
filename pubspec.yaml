@@ -1,7 +1,7 @@
 name: opentrack
 description: "快递查询 Android 应用 - 通过快递100 API 查询快递状态"
 publish_to: 'none'
-version: 0.3.3+1
+version: 0.3.4+2
 
 environment:
   sdk: ^3.7.2

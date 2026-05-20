@@ -6,6 +6,7 @@ import '../../providers/settings_provider.dart';
 import '../../utils/company_util.dart';
 import '../detail/detail_screen.dart';
 import '../../models/package.dart';
+import '../../animations/animations.dart';
 
 class SearchScreen extends ConsumerStatefulWidget {
   const SearchScreen({super.key});
@@ -25,7 +26,6 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   String? _error;
   List<ExpressCompany> _allCompanies = [];
 
-  // 批量查询
   bool _isBatchMode = false;
   bool _isBatchLoading = false;
   List<_BatchResult> _batchResults = [];
@@ -108,7 +108,6 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           type: '',
         );
 
-        // Auto-save if enabled
         final autoSave = ref.read(autoSaveProvider);
         if (autoSave) {
           _addToMyPackages();
@@ -239,169 +238,219 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // 模式切换
-            SegmentedButton<bool>(
-              segments: const [
-                ButtonSegment(value: false, label: Text('单个查询'), icon: Icon(Icons.search)),
-                ButtonSegment(value: true, label: Text('批量查询'), icon: Icon(Icons.playlist_add)),
-              ],
-              selected: {_isBatchMode},
-              onSelectionChanged: (v) => setState(() {
-                _isBatchMode = v.first;
-                _error = null;
-                _result = null;
-                _batchResults = [];
-              }),
+            // Mode switch with animation
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOutCubic,
+              child: SegmentedButton<bool>(
+                segments: const [
+                  ButtonSegment(value: false, label: Text('单个查询'), icon: Icon(Icons.search)),
+                  ButtonSegment(value: true, label: Text('批量查询'), icon: Icon(Icons.playlist_add)),
+                ],
+                selected: {_isBatchMode},
+                onSelectionChanged: (v) => setState(() {
+                  _isBatchMode = v.first;
+                  _error = null;
+                  _result = null;
+                  _batchResults = [];
+                }),
+              ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
 
-            if (!_isBatchMode) ...[
-              // 单个查询模式
-              TextField(
-                controller: _trackingController,
-                decoration: const InputDecoration(
-                  labelText: '快递单号',
-                  hintText: '请输入快递单号',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.search),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _remarkController,
-                decoration: const InputDecoration(
-                  labelText: '物品备注（选填）',
-                  hintText: '如：手机壳、书籍等',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.note_alt_outlined),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _phoneController,
-                decoration: const InputDecoration(
-                  labelText: '手机号（顺丰等需要）',
-                  hintText: '收/寄件人手机号',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.phone),
-                ),
-                keyboardType: TextInputType.phone,
-              ),
-              const SizedBox(height: 12),
-              _CompanySelector(
-                selected: _selectedCompany,
-                onSelected: (c) => setState(() => _selectedCompany = c),
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton.icon(
-                onPressed: _isLoading ? null : _query,
-                icon: _isLoading
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2))
-                    : const Icon(Icons.search),
-                label: Text(_isLoading ? '查询中...' : '查询'),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                ),
-              ),
-            ] else ...[
-              // 批量查询模式
-              TextField(
-                controller: _batchController,
-                maxLines: 6,
-                decoration: const InputDecoration(
-                  labelText: '快递单号',
-                  hintText: '每行输入一个快递单号\n例如：\nYT1234567890\nSF1234567890',
-                  border: OutlineInputBorder(),
-                  alignLabelWithHint: true,
-                ),
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton.icon(
-                onPressed: _isBatchLoading ? null : _batchQuery,
-                icon: _isBatchLoading
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2))
-                    : const Icon(Icons.playlist_add),
-                label: Text(_isBatchLoading
-                    ? '查询中 ($_batchProgress/$_batchTotal)'
-                    : '批量查询'),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                ),
-              ),
-              if (!autoSave && _batchResults.isNotEmpty && !_isBatchLoading) ...[
-                const SizedBox(height: 8),
-                OutlinedButton.icon(
-                  onPressed: _addAllBatchToPackages,
-                  icon: const Icon(Icons.add_circle_outline),
-                  label: const Text('全部添加到我的快递'),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
+            // Animated mode switching
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              transitionBuilder: (child, animation) {
+                return FadeTransition(
+                  opacity: animation,
+                  child: SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(0.05, 0),
+                      end: Offset.zero,
+                    ).animate(CurvedAnimation(
+                      parent: animation,
+                      curve: Curves.easeOutCubic,
+                    )),
+                    child: child,
                   ),
-                ),
-              ],
-            ],
+                );
+              },
+              child: _isBatchMode ? _buildBatchMode(autoSave) : _buildSingleMode(autoSave),
+            ),
 
             if (_error != null) ...[
               const SizedBox(height: 16),
-              Card(
-                color: Colors.red.shade50,
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Text(_error!,
-                      style: TextStyle(color: Colors.red.shade700)),
+              StaggeredListAnimation(
+                index: 0,
+                delay: Duration.zero,
+                child: Card(
+                  color: Colors.red.shade50,
+                  child: Padding(
+                    padding: const EdgeInsets.all(14),
+                    child: Row(
+                      children: [
+                        Icon(Icons.error_outline, color: Colors.red.shade400, size: 20),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(_error!,
+                              style: TextStyle(color: Colors.red.shade700, fontSize: 14)),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ],
 
-            // 单个查询结果
             if (!_isBatchMode && _result != null) ...[
               const SizedBox(height: 16),
-              _ResultCard(
-                trackingNumber: _trackingController.text.trim(),
-                info: _result!,
-                companyName:
-                    _selectedCompany?.name ?? _getCompanyName(_result!.companyCode),
-                onAdd: autoSave ? null : _addToMyPackages,
-                onViewDetail: () {
-                  final pkg = Package(
-                    id: '',
-                    trackingNumber: _trackingController.text.trim(),
-                    companyCode: _result!.companyCode,
-                    companyName:
-                        _selectedCompany?.name ?? _getCompanyName(_result!.companyCode),
-                    remark: _remarkController.text.trim().isNotEmpty
-                        ? _remarkController.text.trim()
-                        : null,
-                  );
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => DetailScreen(
-                              package: pkg,
-                              trackingInfo: _result!,
-                            )),
-                  );
-                },
+              StaggeredListAnimation(
+                index: 0,
+                delay: Duration.zero,
+                child: _ResultCard(
+                  trackingNumber: _trackingController.text.trim(),
+                  info: _result!,
+                  companyName:
+                      _selectedCompany?.name ?? _getCompanyName(_result!.companyCode),
+                  onAdd: autoSave ? null : _addToMyPackages,
+                  onViewDetail: () {
+                    final pkg = Package(
+                      id: '',
+                      trackingNumber: _trackingController.text.trim(),
+                      companyCode: _result!.companyCode,
+                      companyName:
+                          _selectedCompany?.name ?? _getCompanyName(_result!.companyCode),
+                      remark: _remarkController.text.trim().isNotEmpty
+                          ? _remarkController.text.trim()
+                          : null,
+                    );
+                    Navigator.push(
+                      context,
+                      SlideFadeRoute(page: DetailScreen(
+                        package: pkg,
+                        trackingInfo: _result!,
+                      )),
+                    );
+                  },
+                ),
               ),
             ],
 
-            // 批量查询结果
             if (_isBatchMode && _batchResults.isNotEmpty) ...[
               const SizedBox(height: 16),
-              _BatchResultList(
-                results: _batchResults,
-                getCompanyName: _getCompanyName,
+              StaggeredListAnimation(
+                index: 0,
+                delay: Duration.zero,
+                child: _BatchResultList(
+                  results: _batchResults,
+                  getCompanyName: _getCompanyName,
+                ),
               ),
             ],
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildSingleMode(bool autoSave) {
+    return Column(
+      key: const ValueKey('single'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        TextField(
+          controller: _trackingController,
+          decoration: const InputDecoration(
+            labelText: '快递单号',
+            hintText: '请输入快递单号',
+            prefixIcon: Icon(Icons.search),
+          ),
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          controller: _remarkController,
+          decoration: const InputDecoration(
+            labelText: '物品备注（选填）',
+            hintText: '如：手机壳、书籍等',
+            prefixIcon: Icon(Icons.note_alt_outlined),
+          ),
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          controller: _phoneController,
+          decoration: const InputDecoration(
+            labelText: '手机号（顺丰等需要）',
+            hintText: '收/寄件人手机号',
+            prefixIcon: Icon(Icons.phone),
+          ),
+          keyboardType: TextInputType.phone,
+        ),
+        const SizedBox(height: 12),
+        _CompanySelector(
+          selected: _selectedCompany,
+          onSelected: (c) => setState(() => _selectedCompany = c),
+        ),
+        const SizedBox(height: 20),
+        ElevatedButton.icon(
+          onPressed: _isLoading ? null : _query,
+          icon: _isLoading
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+              : const Icon(Icons.search),
+          label: Text(_isLoading ? '查询中...' : '查询'),
+          style: ElevatedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBatchMode(bool autoSave) {
+    return Column(
+      key: const ValueKey('batch'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        TextField(
+          controller: _batchController,
+          maxLines: 6,
+          decoration: const InputDecoration(
+            labelText: '快递单号',
+            hintText: '每行输入一个快递单号\n例如：\nYT1234567890\nSF1234567890',
+            alignLabelWithHint: true,
+          ),
+        ),
+        const SizedBox(height: 20),
+        ElevatedButton.icon(
+          onPressed: _isBatchLoading ? null : _batchQuery,
+          icon: _isBatchLoading
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+              : const Icon(Icons.playlist_add),
+          label: Text(_isBatchLoading
+              ? '查询中 ($_batchProgress/$_batchTotal)'
+              : '批量查询'),
+          style: ElevatedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+          ),
+        ),
+        if (!autoSave && _batchResults.isNotEmpty && !_isBatchLoading) ...[
+          const SizedBox(height: 10),
+          OutlinedButton.icon(
+            onPressed: _addAllBatchToPackages,
+            icon: const Icon(Icons.add_circle_outline),
+            label: const Text('全部添加到我的快递'),
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+            ),
+          ),
+        ],
+      ],
     );
   }
 }
@@ -425,10 +474,10 @@ class _CompanySelector extends StatelessWidget {
         );
         if (result != null) onSelected(result);
       },
+      borderRadius: BorderRadius.circular(12),
       child: InputDecorator(
         decoration: const InputDecoration(
           labelText: '快递公司（选填，留空自动识别）',
-          border: OutlineInputBorder(),
           prefixIcon: Icon(Icons.local_shipping_outlined),
           suffixIcon: Icon(Icons.arrow_drop_down),
         ),
@@ -478,7 +527,6 @@ class _CompanyPickerSheetState extends State<_CompanyPickerSheet> {
               decoration: const InputDecoration(
                 hintText: '搜索快递公司...',
                 prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(),
               ),
               onChanged: (v) => setState(() => _query = v),
             ),
@@ -529,31 +577,31 @@ class _ResultCard extends StatelessWidget {
             Row(
               children: [
                 Icon(Icons.local_shipping,
-                    color: Theme.of(context).colorScheme.primary),
-                const SizedBox(width: 8),
+                    color: Theme.of(context).colorScheme.primary, size: 22),
+                const SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     '$companyName - $trackingNumber',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                    style: const TextStyle(fontWeight: FontWeight.w600),
                   ),
                 ),
                 _StatusBadge(state: info.state),
               ],
             ),
             if (info.data.isNotEmpty) ...[
-              const Divider(),
-              Text(info.data.first.context),
+              const Divider(height: 24),
+              Text(info.data.first.context, style: const TextStyle(fontSize: 14)),
               const SizedBox(height: 4),
               Text(info.data.first.ftime,
-                  style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                  style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
             ],
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             Row(
               children: [
                 Expanded(
                   child: OutlinedButton.icon(
                     onPressed: onViewDetail,
-                    icon: const Icon(Icons.timeline),
+                    icon: const Icon(Icons.timeline, size: 18),
                     label: const Text('查看详情'),
                   ),
                 ),
@@ -562,7 +610,7 @@ class _ResultCard extends StatelessWidget {
                   Expanded(
                     child: ElevatedButton.icon(
                       onPressed: onAdd,
-                      icon: const Icon(Icons.add),
+                      icon: const Icon(Icons.add, size: 18),
                       label: const Text('添加到我的快递'),
                     ),
                   ),
@@ -594,14 +642,20 @@ class _BatchResultList extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('查询结果 (${results.where((r) => r.info != null).length}/${results.length} 成功)',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-            const Divider(),
-            ...results.map((r) => Padding(
+                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+            const Divider(height: 20),
+            ...results.asMap().entries.map((entry) {
+              final i = entry.key;
+              final r = entry.value;
+              return StaggeredListAnimation(
+                index: i,
+                delay: const Duration(milliseconds: 40),
+                child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 6),
                   child: Row(
                     children: [
@@ -610,18 +664,18 @@ class _BatchResultList extends StatelessWidget {
                         size: 20,
                         color: r.info != null ? Colors.green : Colors.red,
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 10),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(r.trackingNumber,
-                                style: const TextStyle(fontSize: 13)),
+                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
                             if (r.info != null)
                               Text(
                                 '${getCompanyName(r.info!.companyCode)} · ${r.info!.data.isNotEmpty ? r.info!.data.first.context : "暂无轨迹"}',
                                 style: TextStyle(
-                                    fontSize: 12, color: Colors.grey.shade600),
+                                    fontSize: 12, color: Colors.grey.shade500),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               )
@@ -634,7 +688,9 @@ class _BatchResultList extends StatelessWidget {
                       ),
                     ],
                   ),
-                )),
+                ),
+              );
+            }),
           ],
         ),
       ),
@@ -671,13 +727,13 @@ class _StatusBadge extends StatelessWidget {
         text = '未知';
     }
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
-      child: Text(text, style: TextStyle(color: color, fontSize: 12)),
+      child: Text(text, style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w600)),
     );
   }
 }

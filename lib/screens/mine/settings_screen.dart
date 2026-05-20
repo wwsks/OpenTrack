@@ -87,7 +87,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               decoration: InputDecoration(
                 labelText: '授权 Key',
                 hintText: '请输入快递100授权 key',
-                border: const OutlineInputBorder(),
                 prefixIcon: const Icon(Icons.vpn_key),
                 suffixIcon: IconButton(
                   icon: Icon(
@@ -104,7 +103,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               decoration: const InputDecoration(
                 labelText: 'Customer',
                 hintText: '请输入 customer',
-                border: OutlineInputBorder(),
                 prefixIcon: Icon(Icons.business),
               ),
             ),
