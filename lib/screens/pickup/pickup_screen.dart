@@ -568,7 +568,7 @@ class _PickupCodeItemState extends State<_PickupCodeItem>
                           fontWeight: FontWeight.bold,
                           color: widget.smsData.isCompleted
                               ? Colors.grey
-                              : null,
+                              : Theme.of(context).textTheme.bodyLarge?.color,
                           decoration: widget.smsData.isCompleted
                               ? TextDecoration.lineThrough
                               : null,
