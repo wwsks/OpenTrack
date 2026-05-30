@@ -19,6 +19,7 @@ build/
 
 # Local settings
 .claude/
+AGENTS.md
 
 # 签名配置
 keystore.properties
