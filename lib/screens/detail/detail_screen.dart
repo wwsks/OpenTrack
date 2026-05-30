@@ -6,6 +6,7 @@ import '../../models/tracking_info.dart';
 import '../../providers/package_provider.dart';
 import '../../config/theme.dart';
 import '../../animations/animations.dart';
+import '../../utils/company_logo.dart';
 
 class DetailScreen extends ConsumerStatefulWidget {
   final Package package;
@@ -150,11 +151,7 @@ class _InfoCard extends StatelessWidget {
                     color: statusColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Icon(
-                    package.isSigned ? Icons.check_circle : Icons.local_shipping,
-                    color: statusColor,
-                    size: 22,
-                  ),
+                  child: CompanyLogo.buildLogo(package.companyName, size: 28),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
