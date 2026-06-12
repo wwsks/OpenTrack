@@ -36,4 +36,30 @@ class NotificationService {
       details,
     );
   }
+
+  Future<void> showOverdueNotification({
+    required String code,
+    required String address,
+  }) async {
+    const androidDetails = AndroidNotificationDetails(
+      'pickup_overdue',
+      '取件超时提醒',
+      channelDescription: '取件码超过72小时未取件时发送提醒',
+      importance: Importance.high,
+      priority: Priority.high,
+    );
+    const details = NotificationDetails(android: androidDetails);
+
+    final title = '取件超时提醒';
+    final body = '您的取件码 $code'
+        '${address.isNotEmpty && address != '未知地址' ? '（$address）' : ''}'
+        ' 已超过 72 小时未取件，请尽快处理';
+
+    await _plugin.show(
+      code.hashCode,
+      title,
+      body,
+      details,
+    );
+  }
 }
