@@ -6,6 +6,7 @@ import 'screens/home/home_screen.dart';
 import 'screens/search/search_screen.dart';
 import 'screens/pickup/pickup_screen.dart';
 import 'screens/mine/mine_screen.dart';
+import 'services/background_service.dart';
 import 'services/notification_service.dart';
 import 'services/storage_service.dart';
 import 'services/update_service.dart';
@@ -18,6 +19,7 @@ void main() async {
   await storage.init();
 
   await NotificationService().init();
+  await BackgroundService.register();
 
   runApp(
     ProviderScope(
