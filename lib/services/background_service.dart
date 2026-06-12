@@ -80,6 +80,7 @@ class BackgroundService {
       frequency: const Duration(hours: 2),
       existingWorkPolicy: ExistingWorkPolicy.keep,
       constraints: Constraints(
+        networkType: NetworkType.not_required,
         requiresBatteryNotLow: true,
       ),
     );
