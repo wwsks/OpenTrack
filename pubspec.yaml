@@ -43,6 +43,9 @@ dependencies:
   # 权限管理
   permission_handler: ^11.3.1
 
+  # 后台任务
+  workmanager: ^0.5.2
+
   # SVG 支持
   flutter_svg: ^2.0.17
 
