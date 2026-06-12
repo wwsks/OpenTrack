@@ -43,6 +43,11 @@ final hideCompletedPickupsProvider =
   return HideCompletedPickupsNotifier(ref.read(storageServiceProvider));
 });
 
+final pickupOverdueEnabledProvider =
+    StateNotifierProvider<PickupOverdueEnabledNotifier, bool>((ref) {
+  return PickupOverdueEnabledNotifier(ref.read(storageServiceProvider));
+});
+
 final deletedPackagesProvider =
     StateNotifierProvider<DeletedPackagesNotifier, List<Package>>((ref) {
   return DeletedPackagesNotifier(ref.read(storageServiceProvider));
@@ -182,6 +187,22 @@ class AutoCleanNotifier extends StateNotifier<bool> {
 
   Future<void> set(bool value) async {
     await _storage.setAutoClean(value);
+    state = value;
+  }
+}
+
+class PickupOverdueEnabledNotifier extends StateNotifier<bool> {
+  final StorageService _storage;
+  PickupOverdueEnabledNotifier(this._storage) : super(false) {
+    _load();
+  }
+
+  Future<void> _load() async {
+    state = await _storage.getPickupOverdueEnabled();
+  }
+
+  Future<void> set(bool value) async {
+    await _storage.setPickupOverdueEnabled(value);
     state = value;
   }
 }
