@@ -40,6 +40,7 @@ class NotificationService {
   Future<void> showOverdueNotification({
     required String code,
     required String address,
+    required String smsId,
   }) async {
     const androidDetails = AndroidNotificationDetails(
       'pickup_overdue',
@@ -56,7 +57,7 @@ class NotificationService {
         ' 已超过 72 小时未取件，请尽快处理';
 
     await _plugin.show(
-      code.hashCode,
+      smsId.hashCode,
       title,
       body,
       details,

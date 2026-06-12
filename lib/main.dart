@@ -19,7 +19,11 @@ void main() async {
   await storage.init();
 
   await NotificationService().init();
-  await BackgroundService.register();
+
+  final pickupOverdueEnabled = await storage.getPickupOverdueEnabled();
+  if (pickupOverdueEnabled) {
+    await BackgroundService.register();
+  }
 
   runApp(
     ProviderScope(
