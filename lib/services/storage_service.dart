@@ -86,6 +86,28 @@ class StorageService {
     await prefs.setBool(AppConstants.keyHideCompletedPickups, value);
   }
 
+  // --- 取件超时通知 ---
+
+  Future<bool> getPickupOverdueEnabled() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(AppConstants.keyPickupOverdueEnabled) ?? false;
+  }
+
+  Future<void> setPickupOverdueEnabled(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(AppConstants.keyPickupOverdueEnabled, value);
+  }
+
+  Future<List<String>> getNotifiedOverdueIds() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getStringList(AppConstants.keyNotifiedOverdueIds) ?? [];
+  }
+
+  Future<void> setNotifiedOverdueIds(List<String> ids) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(AppConstants.keyNotifiedOverdueIds, ids);
+  }
+
   // --- Hive (快递数据) ---
 
   List<Package> getAllPackages() => _packageBox.values.toList();
