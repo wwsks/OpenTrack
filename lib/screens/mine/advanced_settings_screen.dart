@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../providers/settings_provider.dart';
+import '../../services/background_service.dart';
 
 class _CustomRulesScreen extends StatefulWidget {
   const _CustomRulesScreen();
@@ -114,6 +116,64 @@ class _CustomRulesScreenState extends State<_CustomRulesScreen> {
               ),
             ),
         ],
+      ),
+    );
+  }
+}
+
+class _PickupOverdueSwitch extends ConsumerStatefulWidget {
+  const _PickupOverdueSwitch();
+
+  @override
+  ConsumerState<_PickupOverdueSwitch> createState() =>
+      _PickupOverdueSwitchState();
+}
+
+class _PickupOverdueSwitchState extends ConsumerState<_PickupOverdueSwitch> {
+  bool _requesting = false;
+
+  Future<void> _onChanged(bool value) async {
+    if (value) {
+      setState(() => _requesting = true);
+      try {
+        final notificationStatus =
+            await Permission.notification.request();
+        final smsStatus = await Permission.sms.request();
+
+        if (!mounted) return;
+
+        if (!notificationStatus.isGranted || !smsStatus.isGranted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('需要通知和短信权限才能使用此功能')),
+          );
+          setState(() => _requesting = false);
+          return;
+        }
+
+        await ref.read(pickupOverdueEnabledProvider.notifier).set(true);
+        await BackgroundService.register();
+      } finally {
+        if (mounted) setState(() => _requesting = false);
+      }
+    } else {
+      await ref.read(pickupOverdueEnabledProvider.notifier).set(false);
+      await BackgroundService.unregister();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = ref.watch(pickupOverdueEnabledProvider);
+    return SwitchListTile(
+      title: const Text('取件超时提醒'),
+      subtitle: Text(_requesting
+          ? '正在请求权限...'
+          : '取件码超过72小时未取件时发送通知'),
+      value: enabled,
+      onChanged: _requesting ? null : _onChanged,
+      secondary: Icon(
+        enabled ? Icons.notifications_active : Icons.notifications_outlined,
+        color: enabled ? Colors.orange : Colors.grey,
       ),
     );
   }
@@ -244,6 +304,8 @@ class AdvancedSettingsScreen extends ConsumerWidget {
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: Column(
               children: [
+                _PickupOverdueSwitch(),
+                const Divider(height: 1),
                 ListTile(
                   leading: const Icon(Icons.rule, color: Colors.blue),
                   title: const Text('自定义解析规则'),
