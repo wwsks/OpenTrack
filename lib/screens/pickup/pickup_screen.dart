@@ -698,35 +698,33 @@ class _PickupListSheetState extends State<_PickupListSheet> {
     final textSecondary =
         isDark ? AppTheme.darkTextSecondary : AppTheme.lightTextSecondary;
 
-    return Scaffold(
-      // 弹层内置 Scaffold 作为 SnackBar 宿主，保证「已复制」提示显示在弹层之上
-      backgroundColor: Colors.transparent,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 4, 20, 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                '取件清单',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w600,
-                  color: textPrimary,
-                ),
+    // 不在弹层内嵌 Scaffold：Scaffold 布局恒取父约束最大尺寸，会把弹层撑成全屏。
+    // 「已复制」提示改为复制后收起弹层、由根部 Scaffold 的 SnackBar 展示（见复制回调）。
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 4, 20, 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              '取件清单',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w600,
+                color: textPrimary,
               ),
-              const SizedBox(height: 16),
-              _buildContent(textPrimary),
-              const SizedBox(height: 12),
-              Text(
-                '由 AI 生成，取件前请核对',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 12, color: textSecondary),
-              ),
-            ],
-          ),
+            ),
+            const SizedBox(height: 16),
+            _buildContent(textPrimary),
+            const SizedBox(height: 12),
+            Text(
+              '由 AI 生成，取件前请核对',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 12, color: textSecondary),
+            ),
+          ],
         ),
       ),
     );
@@ -771,7 +769,11 @@ class _PickupListSheetState extends State<_PickupListSheet> {
           onPressed: () async {
             await Clipboard.setData(ClipboardData(text: result));
             if (!mounted) return;
-            ScaffoldMessenger.of(context).showSnackBar(
+            // 复制后收起弹层，由根部 Scaffold 的 SnackBar 显示「已复制」：
+            // 弹层保留时提示会被弹层/遮罩挡住，收起后提示对用户清晰可见
+            final messenger = ScaffoldMessenger.of(context);
+            Navigator.of(context).pop();
+            messenger.showSnackBar(
               const SnackBar(content: Text('已复制')),
             );
           },
