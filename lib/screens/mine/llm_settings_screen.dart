@@ -69,8 +69,15 @@ class _LlmSettingsScreenState extends ConsumerState<LlmSettingsScreen> {
       }
     } on LlmException catch (e) {
       if (mounted) {
+        // 错误提示标红（如 401 鉴权失败提示 API Key 无效），文字颜色显式设置保证深浅主题可读
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(llmErrorText(e))),
+          SnackBar(
+            backgroundColor: AppTheme.accentRed,
+            content: Text(
+              llmErrorText(e),
+              style: const TextStyle(color: Colors.white),
+            ),
+          ),
         );
       }
     } finally {
@@ -160,7 +167,8 @@ class _LlmSettingsScreenState extends ConsumerState<LlmSettingsScreen> {
             ),
             const SizedBox(height: 16),
             const Text(
-              '地址、取件码与物流轨迹等数据将发送至你配置的模型服务，请谨慎选择服务提供方。',
+              '地址、取件码与物流轨迹等数据将发送至你配置的模型服务，请谨慎选择服务提供方。'
+              '不发送手机号、快递单号、快递100 API Key 及用户任何身份信息。',
               style: TextStyle(
                 color: AppTheme.lightTextSecondary,
                 fontSize: 12,

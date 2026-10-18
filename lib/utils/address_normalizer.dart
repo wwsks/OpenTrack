@@ -39,7 +39,13 @@ class LlmAddressNormalizer implements AddressNormalizer {
   @override
   Future<Map<String, String>> normalizeAll(List<String> addresses) async {
     final unique = addresses.toSet();
-    final cache = await _storage.getLlmAddressMap();
+    // 读缓存失败按空缓存降级：LLM 是增强层，绝不阻塞短信处理主流程
+    Map<String, String> cache;
+    try {
+      cache = await _storage.getLlmAddressMap();
+    } catch (_) {
+      cache = {};
+    }
 
     final result = <String, String>{};
     final missing = <String>[];

@@ -15,6 +15,14 @@ class _RecordingStorage extends StorageService {
   }
 }
 
+/// getLlmAddressMap 恒抛异常的 StorageService，模拟缓存读取失败
+class _ThrowingReadStorage extends StorageService {
+  @override
+  Future<Map<String, String>> getLlmAddressMap() async {
+    throw Exception('缓存损坏');
+  }
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -173,6 +181,25 @@ void main() {
       });
       // 无效条目被过滤后不进缓存
       expect(await storage.getLlmAddressMap(), isEmpty);
+    });
+
+    test('读缓存抛异常时按空缓存降级，不阻塞归一化', () async {
+      final throwingStorage = _ThrowingReadStorage();
+      var bulkCalls = 0;
+      final normalizer = LlmAddressNormalizer(
+        llm: llm,
+        storage: throwingStorage,
+        bulkQuery: (addresses) async {
+          bulkCalls++;
+          return '{"长春理工南区菜鸟驿站":"长春理工大学南区菜鸟驿站"}';
+        },
+      );
+
+      final result = await normalizer.normalizeAll(['长春理工南区菜鸟驿站']);
+
+      // 缓存读取失败降级为空缓存，仍正常走批量归一化
+      expect(bulkCalls, 1);
+      expect(result, {'长春理工南区菜鸟驿站': '长春理工大学南区菜鸟驿站'});
     });
   });
 }

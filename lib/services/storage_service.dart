@@ -157,8 +157,19 @@ class StorageService {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString(AppConstants.keyLlmAddressMap);
     if (raw == null || raw.isEmpty) return {};
-    final decoded = json.decode(raw) as Map<String, dynamic>;
-    return decoded.map((key, value) => MapEntry(key, value.toString()));
+    // 脏缓存（损坏 JSON / 非对象）一律降级为空 Map，绝不让缓存读取异常阻塞调用方
+    try {
+      final decoded = json.decode(raw);
+      if (decoded is! Map) return {};
+      // 只保留值为字符串的条目，过滤脏条目
+      return {
+        for (final entry in decoded.entries)
+          if (entry.value is String)
+            entry.key.toString(): entry.value as String,
+      };
+    } catch (_) {
+      return {};
+    }
   }
 
   Future<void> setLlmAddressMap(Map<String, String> map) async {
@@ -170,12 +181,26 @@ class StorageService {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString(AppConstants.keyLlmEtaCache);
     if (raw == null || raw.isEmpty) return {};
-    final decoded = json.decode(raw) as Map<String, dynamic>;
-    return decoded.map((key, value) {
-      final entry = (value as Map<String, dynamic>)
-          .map((k, v) => MapEntry(k, v.toString()));
-      return MapEntry(key, entry);
-    });
+    // 脏缓存（损坏 JSON / 非对象）一律降级为空 Map，绝不让缓存读取异常阻塞调用方
+    try {
+      final decoded = json.decode(raw);
+      if (decoded is! Map) return {};
+      final result = <String, Map<String, String>>{};
+      for (final entry in decoded.entries) {
+        final value = entry.value;
+        // 外层值必须是 Map，内层只保留字符串字段，
+        // 过滤 null 等脏条目，避免 null.toString() 产生 "null" 字符串穿透
+        if (value is! Map) continue;
+        final inner = <String, String>{};
+        for (final e in value.entries) {
+          if (e.value is String) inner[e.key.toString()] = e.value as String;
+        }
+        result[entry.key.toString()] = inner;
+      }
+      return result;
+    } catch (_) {
+      return {};
+    }
   }
 
   Future<void> setLlmEtaCache(Map<String, Map<String, String>> cache) async {
