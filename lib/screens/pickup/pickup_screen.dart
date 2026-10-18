@@ -1,25 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../models/parcel_data.dart';
 import '../../models/sms_data.dart';
 import '../../models/sms_model.dart';
+import '../../providers/llm_provider.dart';
+import '../../providers/settings_provider.dart';
+import '../../utils/address_normalizer.dart';
 import '../../utils/sms_parser.dart';
 import '../../utils/sms_processor.dart';
 import '../../utils/sms_util.dart';
 import '../../utils/company_logo.dart';
 import '../../animations/animations.dart';
 
-class PickupScreen extends StatefulWidget {
+class PickupScreen extends ConsumerStatefulWidget {
   const PickupScreen({super.key});
 
   @override
-  State<PickupScreen> createState() => _PickupScreenState();
+  ConsumerState<PickupScreen> createState() => _PickupScreenState();
 }
 
-class _PickupScreenState extends State<PickupScreen> {
+class _PickupScreenState extends ConsumerState<PickupScreen> {
   List<ParcelData> _parcels = [];
   List<SmsData> _successful = [];
   List<SmsModel> _failed = [];
@@ -117,9 +121,24 @@ class _PickupScreenState extends State<PickupScreen> {
       final hideCompleted = prefs.getBool('hide_completed_pickups') ?? true;
 
       _parser.clearAllCustomPatterns();
+
+      // 大模型已配置时用 LLM 归一化驿站地址合并分组，否则保持现状分组。
+      // 持久化的 LLM 配置在 LlmSettingsNotifier 构造时异步加载，需等加载完成再读取，
+      // 否则冷启动首次加载会读到加载前的默认态而漏掉归一化。
+      await ref.read(llmSettingsProvider.notifier).loaded;
+      AddressNormalizer? normalizer;
+      final llm = ref.read(llmServiceProvider);
+      if (llm != null) {
+        normalizer = LlmAddressNormalizer(
+          llm: llm,
+          storage: ref.read(storageServiceProvider),
+        );
+      }
+
       final result = await SmsProcessor.loadAndProcess(
         parser: _parser,
         completedIds: completedIds,
+        normalizer: normalizer,
       );
 
       List<ParcelData> parcels = result.parcels;

@@ -24,6 +24,7 @@ void _callbackDispatcher() {
       final notifiedSet = notifiedIds.toSet();
 
       final parser = SmsParser();
+      // 故意不传 normalizer：后台任务绝不触发 LLM 调用
       final result = await SmsProcessor.loadAndProcess(
         parser: parser,
         completedIds: completedIds,

@@ -2,6 +2,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/sms_model.dart';
 import '../models/sms_data.dart';
 import '../models/parcel_data.dart';
+import 'address_normalizer.dart';
 import 'sms_parser.dart';
 import 'sms_util.dart';
 
@@ -36,19 +37,20 @@ class SmsProcessor {
   static Future<ProcessResult> loadAndProcess({
     required SmsParser parser,
     required List<String> completedIds,
+    AddressNormalizer? normalizer,
   }) async {
     await loadCustomRulesToParser(parser);
     final systemSms = await SmsUtil.readSmsByTimeFilter(7);
-    return process(systemSms, parser, completedIds);
+    return process(systemSms, parser, completedIds, normalizer: normalizer);
   }
 
-  static ProcessResult process(
+  static Future<ProcessResult> process(
     List<SmsModel> messages,
     SmsParser parser,
-    List<String> completedIds,
-  ) {
+    List<String> completedIds, {
+    AddressNormalizer? normalizer,
+  }) async {
     final successful = <SmsData>[];
-    final parcelsMap = <String, ParcelData>{};
     final failed = <SmsModel>[];
 
     for (final sms in messages) {
@@ -58,31 +60,42 @@ class SmsProcessor {
         final combinedKey = '${sms.id}_${sms.timestamp}';
         final address = result.address.isNotEmpty ? result.address : '未知地址';
 
-        final smsData = SmsData(
+        successful.add(SmsData(
           address: address,
           code: result.code,
           sms: sms,
           id: combinedKey,
           lockerNumber: result.lockerNumber,
-        );
-        successful.add(smsData);
-
-        final existingParcel = parcelsMap[address];
-        if (existingParcel != null) {
-          final isDuplicate = existingParcel.smsDataList.any((existing) =>
-              existing.code == smsData.code &&
-              SmsUtil.isSameDay(existing.sms.timestamp, smsData.sms.timestamp));
-          if (!isDuplicate) {
-            existingParcel.smsDataList.add(smsData);
-          }
-        } else {
-          parcelsMap[address] = ParcelData(
-            address: address,
-            smsDataList: [smsData],
-          );
-        }
+        ));
       } else {
         failed.add(sms);
+      }
+    }
+
+    // 地址归一化：只对解析成功的地址做，failed 列表逻辑不变
+    var mapping = const <String, String>{};
+    if (normalizer != null && successful.isNotEmpty) {
+      mapping =
+          await normalizer.normalizeAll(successful.map((s) => s.address).toList());
+    }
+
+    // 用标准化地址作分组 key 与标题，SmsData.address 保持原始地址
+    final parcelsMap = <String, ParcelData>{};
+    for (final smsData in successful) {
+      final groupKey = mapping[smsData.address] ?? smsData.address;
+      final existingParcel = parcelsMap[groupKey];
+      if (existingParcel != null) {
+        final isDuplicate = existingParcel.smsDataList.any((existing) =>
+            existing.code == smsData.code &&
+            SmsUtil.isSameDay(existing.sms.timestamp, smsData.sms.timestamp));
+        if (!isDuplicate) {
+          existingParcel.smsDataList.add(smsData);
+        }
+      } else {
+        parcelsMap[groupKey] = ParcelData(
+          address: groupKey,
+          smsDataList: [smsData],
+        );
       }
     }
 
