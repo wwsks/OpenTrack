@@ -5,6 +5,7 @@ import '../../providers/settings_provider.dart';
 import '../../services/update_service.dart';
 import 'settings_screen.dart';
 import 'advanced_settings_screen.dart';
+import 'llm_settings_screen.dart';
 import 'recycle_bin_screen.dart';
 import '../../animations/animations.dart';
 
@@ -194,6 +195,19 @@ class MineScreen extends ConsumerWidget {
               Navigator.push(
                 context,
                 SlideFadeRoute(page: const AdvancedSettingsScreen()),
+              );
+            },
+          ),
+          const Divider(height: 1, indent: 56),
+          ListTile(
+            leading: const Icon(Icons.smart_toy_outlined),
+            title: const Text('大模型'),
+            subtitle: const Text('模型连接配置与测试'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              Navigator.push(
+                context,
+                SlideFadeRoute(page: const LlmSettingsScreen()),
               );
             },
           ),
