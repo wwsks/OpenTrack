@@ -3,10 +3,13 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/package.dart';
 import '../../models/tracking_info.dart';
+import '../../providers/llm_provider.dart';
 import '../../providers/package_provider.dart';
+import '../../providers/settings_provider.dart';
 import '../../config/theme.dart';
 import '../../animations/animations.dart';
 import '../../utils/company_logo.dart';
+import '../../utils/llm_prompts.dart';
 
 class DetailScreen extends ConsumerStatefulWidget {
   final Package package;
@@ -46,6 +49,7 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final llmConfigured = ref.watch(llmSettingsProvider).isConfigured;
     return Scaffold(
       appBar: AppBar(
         title: const Text('快递详情'),
@@ -121,6 +125,25 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                   ),
                 ),
               ),
+            // 预计送达（估算）：有轨迹 && 未签收 && LLM 已配置时才显示
+            if (_trackingInfo != null &&
+                _trackingInfo!.data.isNotEmpty &&
+                !_trackingInfo!.isSigned &&
+                llmConfigured) ...[
+              const SizedBox(height: 12),
+              // 用最新轨迹的缓存键做 Key：刷新轨迹后 key 变化即重建卡片，
+              // 重新走缓存判断（命中则直接展示，未命中重新生成）
+              KeyedSubtree(
+                key: ValueKey(etaCacheKey(
+                  _trackingInfo!.data.first.context,
+                  _trackingInfo!.data.first.time,
+                )),
+                child: _EtaCard(
+                  info: _trackingInfo!,
+                  companyName: widget.package.companyName,
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -384,6 +407,164 @@ class _TimelineItem extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// 预计送达（估算）卡片：加载/成功/失败三态，按最新轨迹哈希缓存，失败可点击重试
+class _EtaCard extends ConsumerStatefulWidget {
+  final TrackingInfo info;
+  final String companyName;
+
+  const _EtaCard({required this.info, required this.companyName});
+
+  @override
+  ConsumerState<_EtaCard> createState() => _EtaCardState();
+}
+
+class _EtaCardState extends ConsumerState<_EtaCard> {
+  bool _loading = true;
+  EtaEstimate? _estimate;
+
+  @override
+  void initState() {
+    super.initState();
+    _run();
+  }
+
+  /// 生成估算：先查缓存（脏数据按未命中），未命中再调 LLM，成功后回写缓存
+  Future<void> _run() async {
+    final event = widget.info.data.first;
+    final key = etaCacheKey(event.context, event.time);
+    final storage = ref.read(storageServiceProvider);
+
+    // 读缓存：脏数据（解析异常/结构不符）一律按未命中处理，不让页面崩溃
+    var cache = <String, Map<String, String>>{};
+    try {
+      cache = await storage.getLlmEtaCache();
+    } catch (_) {}
+
+    EtaEstimate? estimate;
+    final cached = cache[key];
+    final cachedEstimate = cached?['estimate'];
+    final cachedReason = cached?['reason'];
+    if (cachedEstimate != null && cachedReason != null) {
+      estimate = EtaEstimate(estimate: cachedEstimate, reason: cachedReason);
+    }
+    if (!mounted) return;
+
+    // 未命中再调 LLM 生成；任何异常（含 LlmException）都停留在失败态等待重试
+    if (estimate == null) {
+      try {
+        final llm = ref.read(llmServiceProvider);
+        if (llm != null) {
+          final text = await llm.chat(
+            system: kEtaSystemPrompt,
+            user: buildEtaPrompt(
+              companyName: widget.companyName,
+              traceContext: event.context,
+              traceTime: event.time,
+            ),
+            jsonMode: true,
+          );
+          estimate = tryParseEta(text);
+          // 成功后回写缓存；写缓存失败只丢缓存，不影响展示（estimate 已赋值）
+          if (estimate != null) {
+            cache[key] = {
+              'estimate': estimate.estimate,
+              'reason': estimate.reason,
+            };
+            await storage.setLlmEtaCache(cache);
+          }
+        }
+      } catch (_) {}
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _loading = false;
+      _estimate = estimate;
+    });
+  }
+
+  /// 失败后点击重新发起
+  void _retry() {
+    setState(() {
+      _loading = true;
+      _estimate = null;
+    });
+    _run();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textPrimary =
+        isDark ? AppTheme.darkTextPrimary : AppTheme.lightTextPrimary;
+    final textSecondary =
+        isDark ? AppTheme.darkTextSecondary : AppTheme.lightTextSecondary;
+    final accent = isDark ? AppTheme.primaryDark : AppTheme.primaryBlue;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('预计送达（估算）',
+                style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: textPrimary)),
+            const SizedBox(height: 12),
+            _buildContent(textSecondary, accent),
+            const SizedBox(height: 12),
+            // 这是估算不是承诺：角注常驻，任何状态都保留标注
+            Text('AI 估算，仅供参考',
+                style: TextStyle(fontSize: 11, color: textSecondary)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContent(Color textSecondary, Color accent) {
+    if (_loading) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        child: Center(
+          child: SizedBox(
+            width: 24,
+            height: 24,
+            child: CircularProgressIndicator(
+                strokeWidth: 2.5, color: accent),
+          ),
+        ),
+      );
+    }
+
+    final estimate = _estimate;
+    if (estimate == null) {
+      return Center(
+        child: TextButton.icon(
+          onPressed: _retry,
+          style: TextButton.styleFrom(foregroundColor: AppTheme.accentRed),
+          icon: const Icon(Icons.refresh),
+          label: const Text('生成失败，点击重试'),
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(estimate.estimate,
+            style: TextStyle(
+                fontSize: 16, fontWeight: FontWeight.w600, color: accent)),
+        const SizedBox(height: 6),
+        Text(estimate.reason,
+            style: TextStyle(fontSize: 13, color: textSecondary)),
+      ],
     );
   }
 }

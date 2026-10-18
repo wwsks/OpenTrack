@@ -133,4 +133,35 @@ void main() {
       expect(find.text('已复制'), findsOneWidget);
     });
   });
+
+  group('tryParseEta', () {
+    test('JSON 输出提取 estimate 与 reason 字段', () {
+      final result =
+          tryParseEta('{"estimate":"预计10月20日前后送达","reason":"干线运输中"}');
+      expect(result, isNotNull);
+      expect(result!.estimate, '预计10月20日前后送达');
+      expect(result.reason, '干线运输中');
+    });
+
+    test('缺 estimate 字段返回 null', () {
+      expect(tryParseEta('{"reason":"干线运输中"}'), isNull);
+    });
+
+    test('非 JSON 文本返回 null', () {
+      expect(tryParseEta('大概后天就能送到吧'), isNull);
+    });
+  });
+
+  group('etaCacheKey', () {
+    test('轨迹文本变化导致缓存失效：时间不同则键不同，同输入则相等', () {
+      expect(
+        etaCacheKey('已到达长春转运中心', '2026-10-18 10:00'),
+        isNot(etaCacheKey('已到达长春转运中心', '2026-10-18 12:00')),
+      );
+      expect(
+        etaCacheKey('已到达长春转运中心', '2026-10-18 10:00'),
+        etaCacheKey('已到达长春转运中心', '2026-10-18 10:00'),
+      );
+    });
+  });
 }

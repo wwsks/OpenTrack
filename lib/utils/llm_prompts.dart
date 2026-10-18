@@ -1,4 +1,9 @@
+import 'dart:convert';
+
+import 'package:crypto/crypto.dart';
+
 import '../models/sms_data.dart';
+import '../services/llm_service.dart';
 
 /// 地址归一化 system prompt：三条规则逐字写入，防止误合并
 const String kNormalizeSystemPrompt = '''
@@ -28,3 +33,43 @@ String buildPickupListPrompt(List<SmsData> items) => items.map((item) {
           item.lockerNumber.isEmpty ? '' : '｜柜号：${item.lockerNumber}';
       return '驿站：${item.address}｜取件码：${item.code}$locker';
     }).join('\n');
+
+/// ETA 估算 system prompt：根据当前物流环节与城市间常规时效给出送达估算，只输出 JSON
+const String kEtaSystemPrompt = '''
+你是快递送达时间估算助手。请根据下面给出的快递公司与最新物流轨迹估算送达时间，遵守以下规则：
+1. 结合当前物流环节与轨迹涉及城市之间的常规运输时效给出估算，输出形如「预计X月X日前后送达」。
+2. 拿不准时给出时间区间（如「预计X月X日至X月X日」），并降低语气（如「可能」「大约」）。
+3. 这只是估算不是承诺，不要使用「肯定」「保证」等绝对表述。
+只输出 JSON：{"estimate":"预计X月X日前后送达","reason":"一句话依据"}，不要输出任何解释文字。
+''';
+
+/// 构造 ETA 估算的用户消息：仅含快递公司名与最新轨迹文本/时间（不含手机号、单号等敏感信息）
+String buildEtaPrompt({
+  required String companyName,
+  required String traceContext,
+  required String traceTime,
+}) {
+  return '快递公司：$companyName\n最新轨迹：$traceContext\n轨迹时间：$traceTime';
+}
+
+/// ETA 估算结果：送达估算与一句话依据
+class EtaEstimate {
+  final String estimate;
+  final String reason;
+
+  const EtaEstimate({required this.estimate, required this.reason});
+}
+
+/// 从 LLM 输出中解析 ETA JSON（兼容 ```json 围栏），缺字段或非 JSON 返回 null
+EtaEstimate? tryParseEta(String text) {
+  final json = LlmService.tryParseJsonObject(text);
+  if (json == null) return null;
+  final estimate = json['estimate'];
+  final reason = json['reason'];
+  if (estimate is! String || reason is! String) return null;
+  return EtaEstimate(estimate: estimate, reason: reason);
+}
+
+/// ETA 缓存键：最新轨迹文本 + 时间的 MD5，轨迹一变缓存自然失效
+String etaCacheKey(String traceContext, String traceTime) =>
+    md5.convert(utf8.encode('$traceContext|$traceTime')).toString();
