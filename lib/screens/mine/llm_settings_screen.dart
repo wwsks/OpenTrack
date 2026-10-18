@@ -21,7 +21,11 @@ class _LlmSettingsScreenState extends ConsumerState<LlmSettingsScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    // 持久化配置在 LlmSettingsNotifier 构造时异步加载，可能晚于本页 build 完成。
+    // postFrame 回调与 build 同处一个同步任务，微任务无法在两者之间排空，
+    // 因此那里读到的必然是加载前的构造默认态；必须等加载完成后再回填输入框。
+    ref.read(llmSettingsProvider.notifier).loaded.then((_) {
+      if (!mounted) return;
       final settings = ref.read(llmSettingsProvider);
       _baseUrlController.text = settings.baseUrl;
       _modelController.text = settings.model;

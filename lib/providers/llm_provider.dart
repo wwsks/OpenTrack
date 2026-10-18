@@ -53,8 +53,13 @@ final llmServiceProvider = Provider<LlmService?>((ref) {
 
 class LlmSettingsNotifier extends StateNotifier<LlmSettings> {
   final StorageService _storage;
+
+  /// 构造时从持久化存储加载配置的 Future，完成后 state才包含持久化值。
+  /// UI可等待该 Future 再用 state 回填输入框，避免读到加载前的构造默认态。
+  late final Future<void> loaded;
+
   LlmSettingsNotifier(this._storage) : super(const LlmSettings()) {
-    _load();
+    loaded = _load();
   }
 
   Future<void> _load() async {

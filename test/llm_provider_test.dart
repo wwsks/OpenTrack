@@ -1,8 +1,11 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:opentrack/config/constants.dart';
 import 'package:opentrack/providers/llm_provider.dart';
 import 'package:opentrack/providers/settings_provider.dart';
+import 'package:opentrack/screens/mine/llm_settings_screen.dart';
 import 'package:opentrack/services/llm_service.dart';
 import 'package:opentrack/services/storage_service.dart';
 
@@ -103,6 +106,39 @@ void main() {
         llmErrorText(const LlmException(LlmErrorType.badResponse, '响应异常')),
         '连接失败，请稍后重试',
       );
+    });
+  });
+
+  group('LlmSettingsScreen 输入框回填', () {
+    /// 读取第 [index] 个 TextField 的 controller 文本
+    String fieldText(WidgetTester tester, int index) {
+      final field = tester.widget<TextField>(find.byType(TextField).at(index));
+      return field.controller!.text;
+    }
+
+    testWidgets('首次进入页面时输入框显示已持久化配置而非默认值/空值', (tester) async {
+      // 预置持久化配置，模拟冷启动后首次进入「大模型」页
+      SharedPreferences.setMockInitialValues({
+        AppConstants.keyLlmEnabled: true,
+        AppConstants.keyLlmBaseUrl: 'https://api.example.com/v1',
+        AppConstants.keyLlmModel: 'my-model',
+        AppConstants.keyLlmApiKey: 'secret-key',
+      });
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            storageServiceProvider.overrideWithValue(StorageService()),
+          ],
+          child: const MaterialApp(home: LlmSettingsScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // 三个输入框必须显示持久化值（构造默认态是默认地址/deepseek-chat/空 Key）
+      expect(fieldText(tester, 0), 'https://api.example.com/v1');
+      expect(fieldText(tester, 1), 'my-model');
+      expect(fieldText(tester, 2), 'secret-key');
     });
   });
 }
