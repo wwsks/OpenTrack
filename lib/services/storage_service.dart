@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../config/constants.dart';
@@ -106,6 +108,79 @@ class StorageService {
   Future<void> setNotifiedOverdueIds(List<String> ids) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setStringList(AppConstants.keyNotifiedOverdueIds, ids);
+  }
+
+  // --- SharedPreferences (LLM 配置与缓存) ---
+
+  Future<bool> getLlmEnabled() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(AppConstants.keyLlmEnabled) ?? false;
+  }
+
+  Future<void> setLlmEnabled(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(AppConstants.keyLlmEnabled, value);
+  }
+
+  Future<String> getLlmBaseUrl() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(AppConstants.keyLlmBaseUrl) ??
+        'https://api.deepseek.com/v1';
+  }
+
+  Future<void> setLlmBaseUrl(String value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(AppConstants.keyLlmBaseUrl, value);
+  }
+
+  Future<String> getLlmModel() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(AppConstants.keyLlmModel) ?? 'deepseek-chat';
+  }
+
+  Future<void> setLlmModel(String value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(AppConstants.keyLlmModel, value);
+  }
+
+  Future<String> getLlmApiKey() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(AppConstants.keyLlmApiKey) ?? '';
+  }
+
+  Future<void> setLlmApiKey(String value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(AppConstants.keyLlmApiKey, value);
+  }
+
+  Future<Map<String, String>> getLlmAddressMap() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(AppConstants.keyLlmAddressMap);
+    if (raw == null || raw.isEmpty) return {};
+    final decoded = json.decode(raw) as Map<String, dynamic>;
+    return decoded.map((key, value) => MapEntry(key, value.toString()));
+  }
+
+  Future<void> setLlmAddressMap(Map<String, String> map) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(AppConstants.keyLlmAddressMap, json.encode(map));
+  }
+
+  Future<Map<String, Map<String, String>>> getLlmEtaCache() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(AppConstants.keyLlmEtaCache);
+    if (raw == null || raw.isEmpty) return {};
+    final decoded = json.decode(raw) as Map<String, dynamic>;
+    return decoded.map((key, value) {
+      final entry = (value as Map<String, dynamic>)
+          .map((k, v) => MapEntry(k, v.toString()));
+      return MapEntry(key, entry);
+    });
+  }
+
+  Future<void> setLlmEtaCache(Map<String, Map<String, String>> cache) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(AppConstants.keyLlmEtaCache, json.encode(cache));
   }
 
   // --- Hive (快递数据) ---

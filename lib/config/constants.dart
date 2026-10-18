@@ -13,6 +13,12 @@ class AppConstants {
   static const String keyHideCompletedPickups = 'hide_completed_pickups';
   static const String keyPickupOverdueEnabled = 'pickup_overdue_enabled';
   static const String keyNotifiedOverdueIds = 'notified_overdue_ids';
+  static const String keyLlmEnabled = 'llm_enabled';
+  static const String keyLlmBaseUrl = 'llm_base_url';
+  static const String keyLlmModel = 'llm_model';
+  static const String keyLlmApiKey = 'llm_api_key';
+  static const String keyLlmAddressMap = 'llm_address_map';
+  static const String keyLlmEtaCache = 'llm_eta_cache';
   static const String hiveDeletedBoxName = 'deleted_packages_box';
   static const String hiveBoxName = 'packages_box';
 
