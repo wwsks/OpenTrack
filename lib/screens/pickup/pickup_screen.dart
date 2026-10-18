@@ -4,12 +4,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../config/theme.dart';
 import '../../models/parcel_data.dart';
 import '../../models/sms_data.dart';
 import '../../models/sms_model.dart';
 import '../../providers/llm_provider.dart';
 import '../../providers/settings_provider.dart';
+import '../../services/llm_service.dart';
 import '../../utils/address_normalizer.dart';
+import '../../utils/llm_prompts.dart';
 import '../../utils/sms_parser.dart';
 import '../../utils/sms_processor.dart';
 import '../../utils/sms_util.dart';
@@ -189,6 +192,13 @@ class _PickupScreenState extends ConsumerState<PickupScreen> {
       appBar: AppBar(
         title: const Text('取件码'),
         actions: [
+          // 大模型未配置时隐藏入口，不影响现有功能
+          if (ref.watch(llmSettingsProvider).isConfigured)
+            IconButton(
+              icon: const Icon(Icons.checklist),
+              tooltip: '生成取件清单',
+              onPressed: _showPickupListSheet,
+            ),
           if (!_isLoading && _hasPermission)
             PopupMenuButton<String>(
               icon: const Icon(Icons.analytics_outlined),
@@ -424,6 +434,21 @@ class _PickupScreenState extends ConsumerState<PickupScreen> {
     }
     return false;
   }
+
+  /// 汇总当前列表中所有未完成取件码（跨驿站），弹出取件清单生成弹层
+  void _showPickupListSheet() {
+    final llm = ref.read(llmServiceProvider);
+    if (llm == null) return;
+    final items = _parcels
+        .expand((parcel) => parcel.smsDataList)
+        .where((smsData) => !smsData.isCompleted)
+        .toList();
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) => _PickupListSheet(llm: llm, items: items),
+    );
+  }
 }
 
 class _ParcelCard extends StatelessWidget {
@@ -613,6 +638,147 @@ class _PickupCodeItemState extends State<_PickupCodeItem>
           ],
         ),
       ),
+    );
+  }
+}
+
+/// 取件清单生成弹层：loading / 成功 / 失败三态，失败可点击重试
+class _PickupListSheet extends StatefulWidget {
+  final LlmService llm;
+  final List<SmsData> items;
+
+  const _PickupListSheet({required this.llm, required this.items});
+
+  @override
+  State<_PickupListSheet> createState() => _PickupListSheetState();
+}
+
+class _PickupListSheetState extends State<_PickupListSheet> {
+  bool _loading = true;
+  String? _result;
+
+  @override
+  void initState() {
+    super.initState();
+    _run();
+  }
+
+  /// 发起清单生成；任何异常（含 [LlmException]）都停留在失败态等待重试
+  Future<void> _run() async {
+    String? result;
+    try {
+      final text = await widget.llm.chat(
+        system: kPickupListSystemPrompt,
+        user: buildPickupListPrompt(widget.items),
+      );
+      // 空输出视为失败，避免展示空白清单
+      result = text.trim().isEmpty ? null : text.trim();
+    } catch (_) {}
+    if (!mounted) return;
+    setState(() {
+      _loading = false;
+      _result = result;
+    });
+  }
+
+  /// 失败后点击重新发起
+  void _retry() {
+    setState(() {
+      _loading = true;
+      _result = null;
+    });
+    _run();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textPrimary =
+        isDark ? AppTheme.darkTextPrimary : AppTheme.lightTextPrimary;
+    final textSecondary =
+        isDark ? AppTheme.darkTextSecondary : AppTheme.lightTextSecondary;
+
+    return Scaffold(
+      // 弹层内置 Scaffold 作为 SnackBar 宿主，保证「已复制」提示显示在弹层之上
+      backgroundColor: Colors.transparent,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 4, 20, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                '取件清单',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w600,
+                  color: textPrimary,
+                ),
+              ),
+              const SizedBox(height: 16),
+              _buildContent(textPrimary),
+              const SizedBox(height: 12),
+              Text(
+                '由 AI 生成，取件前请核对',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 12, color: textSecondary),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContent(Color textPrimary) {
+    if (_loading) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 32),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    final result = _result;
+    if (result == null) {
+      return Center(
+        child: TextButton.icon(
+          onPressed: _retry,
+          style: TextButton.styleFrom(foregroundColor: AppTheme.accentRed),
+          icon: const Icon(Icons.refresh),
+          label: const Text('生成失败，点击重试'),
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.45,
+          ),
+          child: SingleChildScrollView(
+            child: SelectableText(
+              result,
+              style: TextStyle(fontSize: 14, height: 1.6, color: textPrimary),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        ElevatedButton.icon(
+          onPressed: () async {
+            await Clipboard.setData(ClipboardData(text: result));
+            if (!mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('已复制')),
+            );
+          },
+          icon: const Icon(Icons.copy, size: 18),
+          label: const Text('复制'),
+        ),
+      ],
     );
   }
 }
