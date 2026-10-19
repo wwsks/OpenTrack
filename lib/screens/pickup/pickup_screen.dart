@@ -192,13 +192,6 @@ class _PickupScreenState extends ConsumerState<PickupScreen> {
       appBar: AppBar(
         title: const Text('取件码'),
         actions: [
-          // 大模型未配置时隐藏入口，不影响现有功能
-          if (ref.watch(llmSettingsProvider).isConfigured)
-            IconButton(
-              icon: const Icon(Icons.checklist),
-              tooltip: '生成取件清单',
-              onPressed: _showPickupListSheet,
-            ),
           if (!_isLoading && _hasPermission)
             PopupMenuButton<String>(
               icon: const Icon(Icons.analytics_outlined),
@@ -209,7 +202,8 @@ class _PickupScreenState extends ConsumerState<PickupScreen> {
                   value: 'success',
                   child: Row(
                     children: [
-                      const Icon(Icons.check_circle, color: Colors.green, size: 20),
+                      const Icon(Icons.check_circle,
+                          color: AppTheme.accentGreen, size: 20),
                       const SizedBox(width: 8),
                       Text('解析成功 (${_successful.length})'),
                     ],
@@ -219,7 +213,8 @@ class _PickupScreenState extends ConsumerState<PickupScreen> {
                   value: 'failed',
                   child: Row(
                     children: [
-                      const Icon(Icons.error_outline, color: Colors.red, size: 20),
+                      const Icon(Icons.error_outline,
+                          color: AppTheme.accentRed, size: 20),
                       const SizedBox(width: 8),
                       Text('解析失败 (${_failed.length})'),
                     ],
@@ -258,7 +253,26 @@ class _PickupScreenState extends ConsumerState<PickupScreen> {
           ),
         ],
       ),
-      body: _buildBody(),
+      body: Column(
+        children: [
+          Expanded(child: _buildBody()),
+          // 「生成取件清单」走主按钮体系（渐变主按钮 + PressableCard 反馈），
+          // 常驻页面底部、大模型已配置时可见（可用性与原 AppBar 入口一致）
+          if (ref.watch(llmSettingsProvider).isConfigured)
+            SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(AppTheme.spacePage,
+                    AppTheme.spaceRow, AppTheme.spacePage, 0),
+                child: AppTheme.primaryButton(
+                  label: '生成取件清单',
+                  icon: Icons.checklist,
+                  onTap: _showPickupListSheet,
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 
@@ -268,10 +282,11 @@ class _PickupScreenState extends ConsumerState<PickupScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.sms_failed_outlined, size: 64, color: Colors.grey.shade300),
-            const SizedBox(height: 16),
-            Text('需要短信权限才能读取取件码',
-                style: TextStyle(color: Colors.grey.shade400, fontSize: 16)),
+            AppTheme.emptyState(
+              context,
+              icon: Icons.sms_failed_outlined,
+              message: '需要短信权限才能读取取件码',
+            ),
             const SizedBox(height: 20),
             ElevatedButton.icon(
               onPressed: () => openAppSettings(),
@@ -295,7 +310,9 @@ class _PickupScreenState extends ConsumerState<PickupScreen> {
             ),
             const SizedBox(height: 16),
             Text('正在读取短信...',
-                style: TextStyle(color: Colors.grey.shade400, fontSize: 14)),
+                style: TextStyle(
+                    color: AppTheme.textSecondary(context),
+                    fontSize: AppTheme.fontSecondary)),
           ],
         ),
       );
@@ -306,9 +323,12 @@ class _PickupScreenState extends ConsumerState<PickupScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.error_outline, size: 64, color: Colors.red),
-            const SizedBox(height: 16),
-            Text(_loadError!, style: const TextStyle(color: Colors.red, fontSize: 14)),
+            AppTheme.emptyState(
+              context,
+              icon: Icons.error_outline,
+              message: _loadError!,
+              color: AppTheme.accentRed,
+            ),
             const SizedBox(height: 16),
             ElevatedButton.icon(
               onPressed: _loadData,
@@ -323,20 +343,20 @@ class _PickupScreenState extends ConsumerState<PickupScreen> {
     if (_parcels.isEmpty) {
       return RefreshIndicator(
         onRefresh: _loadData,
-        child: ListView(
-          children: [
-            const SizedBox(height: 200),
-            Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.inbox_outlined, size: 64, color: Colors.grey.shade300),
-                  const SizedBox(height: 16),
-                  Text('暂无取件码', style: TextStyle(color: Colors.grey.shade400, fontSize: 16)),
-                ],
+        child: LayoutBuilder(
+          builder: (context, constraints) => SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: Center(
+                child: AppTheme.emptyState(
+                  context,
+                  icon: Icons.inbox_outlined,
+                  message: '暂无取件码',
+                ),
               ),
             ),
-          ],
+          ),
         ),
       );
     }
@@ -459,9 +479,11 @@ class _ParcelCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final accent = AppTheme.accent(context);
+
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(AppTheme.spacePage),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -469,33 +491,44 @@ class _ParcelCard extends StatelessWidget {
               children: [
                 AnimatedSwitcher(
                   duration: const Duration(milliseconds: 300),
-                  child: Icon(
-                    parcel.num > 0 ? Icons.location_on : Icons.drafts_outlined,
+                  child: KeyedSubtree(
                     key: ValueKey(parcel.num > 0),
-                    color: parcel.num > 0 ? Colors.blue : Colors.grey,
-                    size: 20,
+                    child: AppTheme.iconPlate(
+                      parcel.num > 0
+                          ? Icons.location_on
+                          : Icons.drafts_outlined,
+                      color: parcel.num > 0
+                          ? accent
+                          : AppTheme.textSecondary(context),
+                    ),
                   ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: AppTheme.spaceIconText),
                 Expanded(
                   child: Text(
                     parcel.address,
-                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                    style: TextStyle(
+                      color: AppTheme.textPrimary(context),
+                      fontWeight: FontWeight.w600,
+                      fontSize: AppTheme.fontCardTitle,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                if (parcel.num > 0)
+                if (parcel.num > 0) ...[
+                  const SizedBox(width: AppTheme.spaceRow),
+                  // 件数徽标：与状态 pill 同一语言（12% 强调色底 + 强调色字 12 w600）
                   AnimatedContainer(
                     duration: const Duration(milliseconds: 300),
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: Colors.orange,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                    padding: AppTheme.statusPillPadding,
+                    decoration: AppTheme.statusPillDecoration(accent),
                     child: Text(
                       '${parcel.num}',
-                      style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+                      style: AppTheme.statusPillTextStyle(accent),
                     ),
                   ),
+                ],
               ],
             ),
             const Divider(height: 20),
@@ -569,7 +602,7 @@ class _PickupCodeItemState extends State<_PickupCodeItem>
         });
         widget.onToggle();
       },
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular(AppTheme.radiusSm),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 8),
         child: Row(
@@ -591,8 +624,8 @@ class _PickupCodeItemState extends State<_PickupCodeItem>
                       key: ValueKey(widget.smsData.isCompleted),
                       size: 24,
                       color: widget.smsData.isCompleted
-                          ? Colors.green
-                          : Colors.orange,
+                          ? AppTheme.accentGreen
+                          : AppTheme.accentOrange,
                     ),
                   ),
                 );
@@ -600,39 +633,66 @@ class _PickupCodeItemState extends State<_PickupCodeItem>
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      AnimatedDefaultTextStyle(
-                        duration: const Duration(milliseconds: 300),
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: widget.smsData.isCompleted
-                              ? Colors.grey
-                              : Theme.of(context).textTheme.bodyLarge?.color,
-                          decoration: widget.smsData.isCompleted
-                              ? TextDecoration.lineThrough
-                              : null,
+              // 完成态整体降透明度 0.5，取件码本体加删除线
+              child: AnimatedOpacity(
+                duration: const Duration(milliseconds: 300),
+                opacity: widget.smsData.isCompleted ? 0.5 : 1,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        // 取件码是取件页主角：20 w700 主题文字色，超长截断防 overflow
+                        Flexible(
+                          flex: 3,
+                          child: AnimatedDefaultTextStyle(
+                            duration: const Duration(milliseconds: 300),
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.5,
+                              color: AppTheme.textPrimary(context),
+                              decoration: widget.smsData.isCompleted
+                                  ? TextDecoration.lineThrough
+                                  : null,
+                            ),
+                            child: Text(
+                              SmsUtil.formatPickupCode(widget.smsData.code),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
                         ),
-                        child: Text(SmsUtil.formatPickupCode(widget.smsData.code)),
-                      ),
-                      if (company.isNotEmpty) ...[
-                        const SizedBox(width: 8),
-                        Text(company,
-                            style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                        if (company.isNotEmpty) ...[
+                          const SizedBox(width: AppTheme.spaceRow),
+                          Flexible(
+                            flex: 2,
+                            child: Text(
+                              company,
+                              style: TextStyle(
+                                fontSize: AppTheme.fontCaption,
+                                color: AppTheme.textSecondary(context),
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
                       ],
-                    ],
-                  ),
-                  Text(timeStr,
-                      style: TextStyle(fontSize: 12, color: Colors.grey.shade400)),
-                ],
+                    ),
+                    Text(
+                      timeStr,
+                      style: TextStyle(
+                        fontSize: AppTheme.fontCaption,
+                        color: AppTheme.textSecondary(context),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
             if (company.isNotEmpty) ...[
-              const SizedBox(width: 8),
+              const SizedBox(width: AppTheme.spaceRow),
               CompanyLogo.buildLogo(company, size: 28),
             ],
           ],
@@ -805,7 +865,9 @@ class _SmsListScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: Text('$title (${smsList.length})')),
       body: smsList.isEmpty
-          ? Center(child: Text('暂无数据', style: TextStyle(color: Colors.grey.shade400)))
+          ? Center(
+              child: Text('暂无数据',
+                  style: TextStyle(color: AppTheme.textSecondary(context))))
           : ListView.builder(
               padding: const EdgeInsets.symmetric(vertical: 8),
               itemCount: smsList.length,
@@ -821,14 +883,16 @@ class _SmsListScreen extends StatelessWidget {
                   delay: const Duration(milliseconds: 30),
                   child: Card(
                     child: Padding(
-                      padding: const EdgeInsets.all(14),
+                      padding: const EdgeInsets.all(AppTheme.spacePage),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
                             children: [
                               Text(timeStr,
-                                  style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+                                  style: TextStyle(
+                                      fontSize: AppTheme.fontCaption,
+                                      color: AppTheme.textSecondary(context))),
                               const Spacer(),
                               InkWell(
                                 onTap: () {
@@ -840,13 +904,17 @@ class _SmsListScreen extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(8),
                                 child: Padding(
                                   padding: const EdgeInsets.all(4),
-                                  child: Icon(Icons.copy, size: 16, color: Colors.grey.shade400),
+                                  child: Icon(Icons.copy,
+                                      size: 16,
+                                      color: AppTheme.textSecondary(context)),
                                 ),
                               ),
                             ],
                           ),
                           const SizedBox(height: 6),
-                          SelectableText(sms.body, style: const TextStyle(fontSize: 13)),
+                          SelectableText(sms.body,
+                              style: const TextStyle(
+                                  fontSize: AppTheme.fontSecondary)),
                           if (isFailed)
                             Padding(
                               padding: const EdgeInsets.only(top: 8),
@@ -884,8 +952,9 @@ class _SmsListScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(10),
+                  // 弹层内的原文引用块：用页面底色做轻微下沉感，深浅主题都不刺眼
+                  color: Theme.of(context).scaffoldBackgroundColor,
+                  borderRadius: BorderRadius.circular(AppTheme.radiusSm),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -902,9 +971,10 @@ class _SmsListScreen extends StatelessWidget {
                             );
                           },
                           borderRadius: BorderRadius.circular(4),
-                          child: const Padding(
-                            padding: EdgeInsets.all(4),
-                            child: Icon(Icons.copy, size: 14, color: Colors.grey),
+                          child: Padding(
+                            padding: const EdgeInsets.all(4),
+                            child: Icon(Icons.copy,
+                                size: 14, color: AppTheme.textSecondary(context)),
                           ),
                         ),
                       ],

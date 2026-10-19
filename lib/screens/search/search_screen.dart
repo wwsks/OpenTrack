@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../config/theme.dart';
 import '../../models/tracking_info.dart';
 import '../../providers/package_provider.dart';
 import '../../providers/settings_provider.dart';
+import '../../utils/company_logo.dart';
 import '../../utils/company_util.dart';
 import '../detail/detail_screen.dart';
 import '../../models/package.dart';
@@ -217,7 +219,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     if (mounted) {
       if (error != null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(error), backgroundColor: Colors.orange),
+          SnackBar(
+              content: Text(error), backgroundColor: AppTheme.accentOrange),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -284,20 +287,24 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               StaggeredListAnimation(
                 index: 0,
                 delay: Duration.zero,
-                child: Card(
-                  color: Colors.red.shade50,
-                  child: Padding(
-                    padding: const EdgeInsets.all(14),
-                    child: Row(
-                      children: [
-                        Icon(Icons.error_outline, color: Colors.red.shade400, size: 20),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(_error!,
-                              style: TextStyle(color: Colors.red.shade700, fontSize: 14)),
-                        ),
-                      ],
-                    ),
+                child: Container(
+                  padding: const EdgeInsets.all(AppTheme.spacePage),
+                  decoration: BoxDecoration(
+                    color: AppTheme.accentRed.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.error_outline,
+                          color: AppTheme.accentRed, size: 20),
+                      const SizedBox(width: AppTheme.spaceIconText),
+                      Expanded(
+                        child: Text(_error!,
+                            style: const TextStyle(
+                                color: AppTheme.accentRed,
+                                fontSize: AppTheme.fontBody)),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -392,18 +399,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           onSelected: (c) => setState(() => _selectedCompany = c),
         ),
         const SizedBox(height: 20),
-        ElevatedButton.icon(
-          onPressed: _isLoading ? null : _query,
-          icon: _isLoading
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-              : const Icon(Icons.search),
-          label: Text(_isLoading ? '查询中...' : '查询'),
-          style: ElevatedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-          ),
+        AppTheme.primaryButton(
+          label: _isLoading ? '查询中...' : '查询',
+          icon: Icons.search,
+          busy: _isLoading,
+          onTap: _query,
         ),
       ],
     );
@@ -424,20 +424,13 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           ),
         ),
         const SizedBox(height: 20),
-        ElevatedButton.icon(
-          onPressed: _isBatchLoading ? null : _batchQuery,
-          icon: _isBatchLoading
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-              : const Icon(Icons.playlist_add),
-          label: Text(_isBatchLoading
+        AppTheme.primaryButton(
+          label: _isBatchLoading
               ? '查询中 ($_batchProgress/$_batchTotal)'
-              : '批量查询'),
-          style: ElevatedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-          ),
+              : '批量查询',
+          icon: Icons.playlist_add,
+          busy: _isBatchLoading,
+          onTap: _batchQuery,
         ),
         if (!autoSave && _batchResults.isNotEmpty && !_isBatchLoading) ...[
           const SizedBox(height: 10),
@@ -474,19 +467,33 @@ class _CompanySelector extends StatelessWidget {
         );
         if (result != null) onSelected(result);
       },
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(AppTheme.radiusMd),
       child: InputDecorator(
         decoration: const InputDecoration(
           labelText: '快递公司（选填，留空自动识别）',
           prefixIcon: Icon(Icons.local_shipping_outlined),
           suffixIcon: Icon(Icons.arrow_drop_down),
         ),
-        child: Text(
-          selected?.name ?? '自动识别',
-          style: TextStyle(
-            color: selected != null ? null : Colors.grey,
-          ),
-        ),
+        child: selected == null
+            ? Text(
+                '自动识别',
+                style: TextStyle(
+                  color: AppTheme.textSecondary(context),
+                  fontSize: AppTheme.fontBody,
+                ),
+              )
+            // 已选公司渲染成统一 pill（12% 强调色底 + 强调色字 12 w600）
+            : Container(
+                padding: AppTheme.statusPillPadding,
+                decoration:
+                    AppTheme.statusPillDecoration(AppTheme.accent(context)),
+                child: Text(
+                  selected!.name,
+                  style: AppTheme.statusPillTextStyle(AppTheme.accent(context)),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
       ),
     );
   }
@@ -570,30 +577,62 @@ class _ResultCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppTheme.spacePage),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                Icon(Icons.local_shipping,
-                    color: Theme.of(context).colorScheme.primary, size: 22),
-                const SizedBox(width: 10),
+                CompanyLogo.buildLogo(companyName, size: 32),
+                const SizedBox(width: AppTheme.spaceIconText),
                 Expanded(
-                  child: Text(
-                    '$companyName - $trackingNumber',
-                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        companyName,
+                        style: TextStyle(
+                          color: AppTheme.textPrimary(context),
+                          fontWeight: FontWeight.w600,
+                          fontSize: AppTheme.fontCardTitle,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        trackingNumber,
+                        style: TextStyle(
+                          color: AppTheme.textPrimary(context),
+                          fontWeight: FontWeight.w600,
+                          fontSize: AppTheme.fontSecondary,
+                          letterSpacing: 0.3,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ),
                 ),
+                const SizedBox(width: AppTheme.spaceRow),
                 _StatusBadge(state: info.state),
               ],
             ),
             if (info.data.isNotEmpty) ...[
               const Divider(height: 24),
-              Text(info.data.first.context, style: const TextStyle(fontSize: 14)),
+              Text(
+                info.data.first.context,
+                style: TextStyle(
+                    fontSize: AppTheme.fontBody,
+                    color: AppTheme.textPrimary(context)),
+              ),
               const SizedBox(height: 4),
-              Text(info.data.first.ftime,
-                  style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
+              Text(
+                info.data.first.ftime,
+                style: TextStyle(
+                    color: AppTheme.textSecondary(context),
+                    fontSize: AppTheme.fontCaption),
+              ),
             ],
             const SizedBox(height: 16),
             Row(
@@ -642,12 +681,15 @@ class _BatchResultList extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(AppTheme.spacePage),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('查询结果 (${results.where((r) => r.info != null).length}/${results.length} 成功)',
-                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+                style: TextStyle(
+                    color: AppTheme.textPrimary(context),
+                    fontWeight: FontWeight.w600,
+                    fontSize: AppTheme.fontBody)),
             const Divider(height: 20),
             ...results.asMap().entries.map((entry) {
               final i = entry.key;
@@ -662,27 +704,36 @@ class _BatchResultList extends StatelessWidget {
                       Icon(
                         r.info != null ? Icons.check_circle : Icons.error_outline,
                         size: 20,
-                        color: r.info != null ? Colors.green : Colors.red,
+                        color: r.info != null
+                            ? AppTheme.accentGreen
+                            : AppTheme.accentRed,
                       ),
-                      const SizedBox(width: 10),
+                      const SizedBox(width: AppTheme.spaceIconText),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(r.trackingNumber,
-                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+                                style: TextStyle(
+                                    fontSize: AppTheme.fontSecondary,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppTheme.textPrimary(context)),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis),
                             if (r.info != null)
                               Text(
                                 '${getCompanyName(r.info!.companyCode)} · ${r.info!.data.isNotEmpty ? r.info!.data.first.context : "暂无轨迹"}',
                                 style: TextStyle(
-                                    fontSize: 12, color: Colors.grey.shade500),
+                                    fontSize: AppTheme.fontCaption,
+                                    color: AppTheme.textSecondary(context)),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               )
                             else
                               Text(r.error ?? '查询失败',
                                   style: const TextStyle(
-                                      fontSize: 12, color: Colors.red)),
+                                      fontSize: AppTheme.fontCaption,
+                                      color: AppTheme.accentRed)),
                           ],
                         ),
                       ),
@@ -698,42 +749,21 @@ class _BatchResultList extends StatelessWidget {
   }
 }
 
+/// 状态 pill：12% 状态色底 + 状态色字 12 w600（与首页卡片同一套映射与样式）
 class _StatusBadge extends StatelessWidget {
   final String state;
   const _StatusBadge({required this.state});
 
   @override
   Widget build(BuildContext context) {
-    Color color;
-    String text;
-    switch (state) {
-      case '0':
-        color = Colors.blue;
-        text = '在途';
-      case '1':
-        color = Colors.orange;
-        text = '揽收';
-      case '5':
-        color = Colors.purple;
-        text = '派件';
-      case '3':
-        color = Colors.green;
-        text = '签收';
-      case '2':
-        color = Colors.red;
-        text = '疑难';
-      default:
-        color = Colors.grey;
-        text = '未知';
-    }
+    final color = AppTheme.statusColor(state);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
+      padding: AppTheme.statusPillPadding,
+      decoration: AppTheme.statusPillDecoration(color),
+      child: Text(
+        AppTheme.statusText(state),
+        style: AppTheme.statusPillTextStyle(color),
       ),
-      child: Text(text, style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w600)),
     );
   }
 }
