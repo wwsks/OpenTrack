@@ -33,6 +33,44 @@ class AppTheme {
   static const Color statusDelivering = Color(0xFF9C27B0);
   static const Color statusProblem = Color(0xFFE53935);
 
+  // ── 全局设计规范刻度（见 .superpowers/ui-polish/design-brief.md「全局设计规范」）──
+  // 圆角刻度：小组件（chip/标签/图标底板）10、卡片/输入框/按钮 14、弹层/对话框 20
+  static const double radiusSm = 10;
+  static const double radiusMd = 14;
+  static const double radiusLg = 20;
+
+  // 间距刻度：页面水平边距 16、卡片内边距 16、区块间距 20、行间距 8、图标与文字间距 10~12
+  static const double spacePage = 16;
+  static const double spaceBlock = 20;
+  static const double spaceRow = 8;
+  static const double spaceIconText = 10;
+
+  // 字号刻度：辅助 12 / 次要 13 / 正文 15 / 卡片标题 16 / 页面大标题 20
+  // 权重约定：标题 w600、正文 w400、辅助 w400 灰色；数字/单号可用 w600 突出
+  static const double fontCaption = 12;
+  static const double fontSecondary = 13;
+  static const double fontBody = 15;
+  static const double fontCardTitle = 16;
+  static const double fontPageTitle = 20;
+
+  // 发丝描边宽度：与 dividerTheme 一致（视觉 1px），深色主题卡片/底板/分隔线统一使用
+  static const double hairline = 0.5;
+
+  // 主按钮极轻纵向渐变（primaryBlue → 2E7FD4，约 8% 明度差，不花哨）；
+  // ElevatedButton 主题只承载扁平底色与圆角，渐变按钮用 AppTheme.primaryButtonDecoration 包裹
+  static const Color primaryBlueDeep = Color(0xFF2E7FD4);
+  static const LinearGradient primaryGradient = LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [primaryBlue, primaryBlueDeep],
+  );
+
+  // 浅色卡片极轻环境阴影（alpha ≈ 0.04，不是浮空卡片）；
+  // 深色主题不加阴影，只加 darkDivider 发丝描边（见 cardDecoration）
+  static const List<BoxShadow> lightCardShadow = [
+    BoxShadow(color: Color(0x0A000000), blurRadius: 10, offset: Offset(0, 2)),
+  ];
+
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,
@@ -56,14 +94,18 @@ class AppTheme {
         labelMedium: TextStyle(color: lightTextPrimary),
         labelSmall: TextStyle(color: lightTextSecondary),
       ),
-      appBarTheme: const AppBarTheme(
+      appBarTheme: AppBarTheme(
         centerTitle: true,
         elevation: 0,
-        scrolledUnderElevation: 1,
+        // 去滚动 elevation，层级只用底部一条发丝分隔线表达
+        scrolledUnderElevation: 0,
+        shape: const Border(
+          bottom: BorderSide(color: lightDivider, width: hairline),
+        ),
         backgroundColor: lightAppBar,
         foregroundColor: lightTextPrimary,
         surfaceTintColor: Colors.transparent,
-        systemOverlayStyle: SystemUiOverlayStyle(
+        systemOverlayStyle: const SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,
           statusBarIconBrightness: Brightness.dark,
         ),
@@ -71,8 +113,10 @@ class AppTheme {
       cardTheme: CardTheme(
         elevation: 0,
         color: lightCard,
+        // 卡片阴影不在 Card 上做（elevation 阴影不可控），统一走
+        // AppTheme.cardDecoration / lightCardShadow 的极轻环境阴影
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(radiusMd),
         ),
         margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
       ),
@@ -93,15 +137,15 @@ class AppTheme {
         fillColor: lightCard,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(radiusMd),
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(radiusMd),
           borderSide: const BorderSide(color: lightDivider, width: 1),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(radiusMd),
           borderSide: const BorderSide(color: primaryBlue, width: 1.5),
         ),
         hintStyle: const TextStyle(color: lightTextSecondary, fontSize: 14),
@@ -113,7 +157,7 @@ class AppTheme {
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(radiusMd),
           ),
           textStyle: const TextStyle(
             fontSize: 15,
@@ -127,7 +171,7 @@ class AppTheme {
           side: const BorderSide(color: primaryBlue, width: 1),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(radiusMd),
           ),
           textStyle: const TextStyle(
             fontSize: 15,
@@ -138,7 +182,7 @@ class AppTheme {
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(radiusSm),
         ),
         contentTextStyle: const TextStyle(fontSize: 14),
       ),
@@ -152,13 +196,13 @@ class AppTheme {
       ),
       dialogTheme: DialogTheme(
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(radiusLg),
         ),
         elevation: 8,
       ),
       bottomSheetTheme: const BottomSheetThemeData(
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(radiusLg)),
         ),
         showDragHandle: true,
         backgroundColor: lightCard,
@@ -189,14 +233,18 @@ class AppTheme {
         labelMedium: TextStyle(color: darkTextPrimary),
         labelSmall: TextStyle(color: darkTextSecondary),
       ),
-      appBarTheme: const AppBarTheme(
+      appBarTheme: AppBarTheme(
         centerTitle: true,
         elevation: 0,
-        scrolledUnderElevation: 1,
+        // 去滚动 elevation，层级只用底部一条发丝分隔线表达
+        scrolledUnderElevation: 0,
+        shape: const Border(
+          bottom: BorderSide(color: darkDivider, width: hairline),
+        ),
         backgroundColor: darkAppBar,
         foregroundColor: darkTextPrimary,
         surfaceTintColor: Colors.transparent,
-        systemOverlayStyle: SystemUiOverlayStyle(
+        systemOverlayStyle: const SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,
           statusBarIconBrightness: Brightness.light,
         ),
@@ -204,8 +252,10 @@ class AppTheme {
       cardTheme: CardTheme(
         elevation: 0,
         color: darkCard,
+        // 深色卡片不加阴影，只加 darkDivider 发丝描边勾勒边界
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(radiusMd),
+          side: const BorderSide(color: darkDivider, width: hairline),
         ),
         margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
       ),
@@ -226,15 +276,15 @@ class AppTheme {
         fillColor: darkCard,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(radiusMd),
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(radiusMd),
           borderSide: const BorderSide(color: darkDivider, width: 1),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(radiusMd),
           borderSide: const BorderSide(color: primaryDark, width: 1.5),
         ),
         hintStyle: const TextStyle(color: darkTextSecondary, fontSize: 14),
@@ -246,7 +296,7 @@ class AppTheme {
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(radiusMd),
           ),
           textStyle: const TextStyle(
             fontSize: 15,
@@ -260,7 +310,7 @@ class AppTheme {
           side: const BorderSide(color: primaryDark, width: 1),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(radiusMd),
           ),
           textStyle: const TextStyle(
             fontSize: 15,
@@ -271,7 +321,7 @@ class AppTheme {
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(radiusSm),
         ),
         contentTextStyle: const TextStyle(fontSize: 14),
       ),
@@ -285,14 +335,14 @@ class AppTheme {
       ),
       dialogTheme: DialogTheme(
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(radiusLg),
         ),
         elevation: 8,
         backgroundColor: darkCard,
       ),
       bottomSheetTheme: const BottomSheetThemeData(
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(radiusLg)),
         ),
         showDragHandle: true,
         backgroundColor: darkCard,
@@ -321,5 +371,72 @@ class AppTheme {
       case '2': return '疑难';
       default:  return '未知';
     }
+  }
+
+  // ── 通用样式辅助构建方法（ThemeData 承载不了的约定，统一从这里取）──
+
+  /// 卡片装饰：浅色 = 卡片色 + 极轻环境阴影；深色 = 卡片色 + 发丝描边（不加阴影）。
+  /// 自定义容器（Container/DecoratedBox 卡片）统一用它，不要各自写阴影/描边。
+  static BoxDecoration cardDecoration(BuildContext context, {Color? color}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return BoxDecoration(
+      color: color ?? (isDark ? darkCard : lightCard),
+      borderRadius: BorderRadius.circular(radiusMd),
+      border: isDark
+          ? Border.all(color: darkDivider, width: hairline)
+          : null,
+      boxShadow: isDark ? null : lightCardShadow,
+    );
+  }
+
+  /// 主按钮装饰：极轻纵向渐变 + 圆角 14。
+  /// ElevatedButton 主题无法承载渐变，需要渐变按钮时用 Container + 本装饰包裹，
+  /// 文字用白色 w600，按压反馈沿用 PressableCard。
+  static BoxDecoration primaryButtonDecoration({double radius = radiusMd}) {
+    return BoxDecoration(
+      gradient: primaryGradient,
+      borderRadius: BorderRadius.circular(radius),
+    );
+  }
+
+  /// 状态 pill 内边距：水平 10 / 垂直 4
+  static const EdgeInsets statusPillPadding =
+      EdgeInsets.symmetric(horizontal: 10, vertical: 4);
+
+  /// 状态 pill 底色：圆角 10、底 = 状态色 12% 透明度
+  static BoxDecoration statusPillDecoration(Color statusColor) {
+    return BoxDecoration(
+      color: statusColor.withValues(alpha: 0.12),
+      borderRadius: BorderRadius.circular(radiusSm),
+    );
+  }
+
+  /// 状态 pill 文字：状态色、12 w600（状态色映射沿用 statusColor/statusText）
+  static TextStyle statusPillTextStyle(Color statusColor) {
+    return TextStyle(
+      color: statusColor,
+      fontSize: fontCaption,
+      fontWeight: FontWeight.w600,
+    );
+  }
+
+  /// 图标底板装饰：圆角 8、底 = 图标色 12% 透明度（取代裸图标）
+  static BoxDecoration iconPlateDecoration(Color iconColor, {double radius = 8}) {
+    return BoxDecoration(
+      color: iconColor.withValues(alpha: 0.12),
+      borderRadius: BorderRadius.circular(radius),
+    );
+  }
+
+  /// 图标底板：32x32 着色底板 + 图标本色，设置页/功能入口前导图标统一使用
+  static Widget iconPlate(IconData icon,
+      {Color color = primaryBlue, double size = 32}) {
+    return Container(
+      width: size,
+      height: size,
+      alignment: Alignment.center,
+      decoration: iconPlateDecoration(color),
+      child: Icon(icon, size: size * 0.55, color: color),
+    );
   }
 }
