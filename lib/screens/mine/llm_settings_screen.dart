@@ -104,13 +104,13 @@ class _LlmSettingsScreenState extends ConsumerState<LlmSettingsScreen> {
                 onChanged: (value) {
                   ref.read(llmSettingsProvider.notifier).setEnabled(value);
                 },
-                secondary: Icon(
+                secondary: AppTheme.iconPlate(
                   settings.enabled
                       ? Icons.smart_toy
                       : Icons.smart_toy_outlined,
                   color: settings.enabled
-                      ? AppTheme.accentGreen
-                      : AppTheme.lightTextSecondary,
+                      ? AppTheme.accentPurple
+                      : AppTheme.textSecondary(context),
                 ),
               ),
             ),
@@ -168,11 +168,11 @@ class _LlmSettingsScreenState extends ConsumerState<LlmSettingsScreen> {
             const SizedBox(height: AppTheme.spaceBlock),
             _buildFeatureIntro(),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               '地址、取件码与物流轨迹等数据将发送至你配置的模型服务，请谨慎选择服务提供方。'
               '不发送手机号、快递单号、快递100 API Key 及用户任何身份信息。',
               style: TextStyle(
-                color: AppTheme.lightTextSecondary,
+                color: AppTheme.textSecondary(context),
                 fontSize: 12,
                 height: 1.5,
               ),
@@ -192,28 +192,8 @@ class _LlmSettingsScreenState extends ConsumerState<LlmSettingsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              // 分区标题前缀：4px 主色小竖条
-              Container(
-                width: 4,
-                height: AppTheme.fontSecondary,
-                decoration: BoxDecoration(
-                  color: AppTheme.primaryBlue,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(width: AppTheme.spaceRow),
-              const Text(
-                '启用后可用功能',
-                style: TextStyle(
-                  fontSize: AppTheme.fontSecondary,
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.lightTextSecondary,
-                ),
-              ),
-            ],
-          ),
+          // 分区标题走全局规范（4px 主色竖条 + 13 w600 次要色）
+          AppTheme.sectionTitle('启用后可用功能'),
           const SizedBox(height: 12),
           _buildFeatureRow(
             Icons.auto_awesome_outlined,
@@ -246,9 +226,9 @@ class _LlmSettingsScreenState extends ConsumerState<LlmSettingsScreen> {
         Expanded(
           child: Text(
             text,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: AppTheme.fontSecondary,
-              color: AppTheme.lightTextSecondary,
+              color: AppTheme.textSecondary(context),
               height: 1.4,
             ),
           ),

@@ -7,6 +7,7 @@ import 'package:opentrack/models/package.dart';
 import 'package:opentrack/providers/settings_provider.dart';
 import 'package:opentrack/screens/mine/llm_settings_screen.dart';
 import 'package:opentrack/services/storage_service.dart';
+import 'package:opentrack/widgets/package_card.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// 假存储：测试环境不初始化 Hive，启动路径触碰到的存储方法全部 override，
@@ -104,6 +105,59 @@ void main() {
       // 让 SnackBar 自动消失，清理遗留计时器
       await tester.pump(const Duration(seconds: 5));
       await tester.pumpAndSettle();
+    });
+  });
+
+  group('视觉约定（Phase 2）', () {
+    testWidgets('快递卡片状态 pill 与单号 w600', (WidgetTester tester) async {
+      final pkg = Package(
+        id: '1',
+        trackingNumber: 'SF1234567890',
+        companyCode: 'shunfeng',
+        companyName: '测试快递',
+        // 用静态状态（揽收），避开在途/派件的无限脉冲动画
+        status: '1',
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(body: PackageCard(package: pkg)),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // 状态 pill：状态文案 + 状态色 + 12 w600
+      final pill = tester.widget<Text>(find.text('揽收'));
+      expect(pill.style?.color, AppTheme.statusCollected);
+      expect(pill.style?.fontSize, 12);
+      expect(pill.style?.fontWeight, FontWeight.w600);
+
+      // 单号用 w600 突出
+      final number = tester.widget<Text>(find.text('SF1234567890'));
+      expect(number.style?.fontWeight, FontWeight.w600);
+    });
+
+    testWidgets('空状态：品牌色图标 + 13px 次要色文案', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => AppTheme.emptyState(
+                context,
+                icon: Icons.inbox_outlined,
+                message: '暂无快递',
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final message = tester.widget<Text>(find.text('暂无快递'));
+      expect(message.style?.fontSize, 13);
+      expect(message.style?.color, AppTheme.lightTextSecondary);
+
+      final icon = tester.widget<Icon>(find.byIcon(Icons.inbox_outlined));
+      expect(icon.color, AppTheme.primaryBlue);
     });
   });
 }

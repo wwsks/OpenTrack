@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../config/theme.dart';
 import '../../providers/settings_provider.dart';
 import '../../services/update_service.dart';
 import 'settings_screen.dart';
@@ -70,7 +71,18 @@ class MineScreen extends ConsumerWidget {
             child: _buildAboutCard(context),
           ),
 
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
+          // 版本号：页面底部居中次要色（版本号维护点之一，见 AGENTS.md）
+          Center(
+            child: Text(
+              '自邮取 v0.4.0',
+              style: TextStyle(
+                fontSize: AppTheme.fontCaption,
+                color: AppTheme.textSecondary(context),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
         ],
       ),
     );
@@ -95,14 +107,7 @@ class MineScreen extends ConsumerWidget {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: theme.colorScheme.primary.withValues(alpha: 0.3),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
+                borderRadius: BorderRadius.circular(AppTheme.radiusMd),
               ),
               child: const Icon(
                 Icons.local_shipping,
@@ -115,11 +120,12 @@ class MineScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     '自邮取',
                     style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
+                      color: AppTheme.textPrimary(context),
+                      fontSize: AppTheme.fontPageTitle,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -129,7 +135,9 @@ class MineScreen extends ConsumerWidget {
                         width: 8,
                         height: 8,
                         decoration: BoxDecoration(
-                          color: hasApi ? Colors.green : Colors.orange,
+                          color: hasApi
+                              ? AppTheme.accentGreen
+                              : AppTheme.accentOrange,
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -137,8 +145,10 @@ class MineScreen extends ConsumerWidget {
                       Text(
                         hasApi ? 'API 已配置' : 'API 未配置',
                         style: TextStyle(
-                          fontSize: 13,
-                          color: hasApi ? Colors.green : Colors.orange,
+                          fontSize: AppTheme.fontSecondary,
+                          color: hasApi
+                              ? AppTheme.accentGreen
+                              : AppTheme.accentOrange,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -149,7 +159,7 @@ class MineScreen extends ConsumerWidget {
             ),
             Icon(
               Icons.chevron_right,
-              color: Colors.grey.shade400,
+              color: AppTheme.textSecondary(context),
             ),
           ],
         ),
@@ -163,8 +173,10 @@ class MineScreen extends ConsumerWidget {
       child: Column(
         children: [
           ListTile(
-            leading: Icon(Icons.vpn_key,
-                color: hasApi ? Colors.green : Colors.orange),
+            leading: AppTheme.iconPlate(
+              Icons.vpn_key,
+              color: hasApi ? AppTheme.accentGreen : AppTheme.accentOrange,
+            ),
             title: const Text('API 配置'),
             subtitle: Text(hasApi ? '已配置' : '未配置'),
             trailing: const Icon(Icons.chevron_right),
@@ -177,7 +189,8 @@ class MineScreen extends ConsumerWidget {
           ),
           const Divider(height: 1, indent: 56),
           ListTile(
-            leading: const Icon(Icons.help_outline),
+            leading:
+                AppTheme.iconPlate(Icons.help_outline, color: AppTheme.primaryBlue),
             title: const Text('如何获取快递100 API'),
             subtitle: const Text('查看操作指南'),
             trailing: const Icon(Icons.chevron_right),
@@ -187,7 +200,8 @@ class MineScreen extends ConsumerWidget {
           ),
           const Divider(height: 1, indent: 56),
           ListTile(
-            leading: const Icon(Icons.settings),
+            leading:
+                AppTheme.iconPlate(Icons.settings, color: AppTheme.primaryBlue),
             title: const Text('高级设置'),
             subtitle: const Text('自动保存、自动清理'),
             trailing: const Icon(Icons.chevron_right),
@@ -200,7 +214,8 @@ class MineScreen extends ConsumerWidget {
           ),
           const Divider(height: 1, indent: 56),
           ListTile(
-            leading: const Icon(Icons.smart_toy_outlined),
+            leading: AppTheme.iconPlate(Icons.smart_toy_outlined,
+                color: AppTheme.accentPurple),
             title: const Text('大模型'),
             subtitle: const Text('模型连接配置与测试'),
             trailing: const Icon(Icons.chevron_right),
@@ -222,7 +237,8 @@ class MineScreen extends ConsumerWidget {
       child: Column(
         children: [
           ListTile(
-            leading: const Icon(Icons.delete_outline),
+            leading: AppTheme.iconPlate(Icons.delete_outline,
+                color: AppTheme.accentRed),
             title: const Text('回收站'),
             subtitle: const Text('查看已删除的快递'),
             trailing: const Icon(Icons.chevron_right),
@@ -246,9 +262,9 @@ class MineScreen extends ConsumerWidget {
       child: Column(
         children: [
           ListTile(
-            leading: const Icon(Icons.info_outline),
+            leading: AppTheme.iconPlate(Icons.info_outline,
+                color: AppTheme.primaryBlue),
             title: const Text('自邮取'),
-            subtitle: const Text('v0.4.0'),
             trailing: IconButton(
               icon: const Icon(Icons.refresh),
               tooltip: '检查更新',
@@ -303,7 +319,7 @@ class MineScreen extends ConsumerWidget {
           ),
           const Divider(height: 1, indent: 56),
           ListTile(
-            leading: const Icon(Icons.code),
+            leading: AppTheme.iconPlate(Icons.code, color: AppTheme.primaryBlue),
             title: const Text('GitHub 项目地址'),
             subtitle: const Text('github.com/wwsks/OpenTrack'),
             trailing: const Icon(Icons.open_in_new),
@@ -337,7 +353,7 @@ class MineScreen extends ConsumerWidget {
                 child: const Text(
                   'https://api.kuaidi100.com',
                   style: TextStyle(
-                    color: Colors.blue,
+                    color: AppTheme.primaryBlue,
                     decoration: TextDecoration.underline,
                   ),
                 ),
@@ -352,7 +368,7 @@ class MineScreen extends ConsumerWidget {
               const Text('5. 获取授权参数：授权 Key 和 Customer，填入本应用即可使用'),
               const SizedBox(height: 16),
               const Text('PS：新注册用户可获得免费 100 次查询次数',
-                  style: TextStyle(color: Colors.orange, fontSize: 12)),
+                  style: TextStyle(color: AppTheme.accentOrange, fontSize: 12)),
             ],
           ),
         ),
@@ -374,9 +390,9 @@ class _AutoCheckUpdateTile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final autoCheck = ref.watch(autoCheckUpdateProvider);
     return SwitchListTile(
-      secondary: Icon(
+      secondary: AppTheme.iconPlate(
         autoCheck ? Icons.system_update : Icons.system_update_outlined,
-        color: autoCheck ? Colors.blue : Colors.grey,
+        color: autoCheck ? AppTheme.primaryBlue : AppTheme.textSecondary(context),
       ),
       title: const Text('自动检查更新'),
       subtitle: const Text('打开应用时检查是否有新版本'),
@@ -394,17 +410,10 @@ class _SectionTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 分区标题走全局规范：4px 主色小竖条 + 13 w600 次要色（AppTheme.sectionTitle）
     return Padding(
       padding: const EdgeInsets.fromLTRB(28, 4, 16, 6),
-      child: Text(
-        title,
-        style: TextStyle(
-          fontSize: 13,
-          color: Colors.grey.shade500,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0.5,
-        ),
-      ),
+      child: AppTheme.sectionTitle(title),
     );
   }
 }

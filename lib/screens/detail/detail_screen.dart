@@ -99,7 +99,9 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                           ),
                           const SizedBox(height: 12),
                           Text('正在查询...',
-                              style: TextStyle(color: Colors.grey.shade400, fontSize: 14)),
+                              style: TextStyle(
+                                  color: AppTheme.textSecondary(context),
+                                  fontSize: AppTheme.fontBody)),
                         ],
                       ),
                     ),
@@ -120,7 +122,9 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                   child: Padding(
                     padding: const EdgeInsets.all(32),
                     child: Center(
-                      child: Text('暂无轨迹信息', style: TextStyle(color: Colors.grey.shade400)),
+                      child: Text('暂无轨迹信息',
+                          style: TextStyle(
+                              color: AppTheme.textSecondary(context))),
                     ),
                   ),
                 ),
@@ -161,18 +165,23 @@ class _InfoCard extends StatelessWidget {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppTheme.spacePage),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
+                // logo 状态底板：与首页卡片同一规格（44x44、圆角 10、状态色轻染）
                 Container(
-                  width: 40,
-                  height: 40,
+                  width: 44,
+                  height: 44,
                   decoration: BoxDecoration(
-                    color: statusColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(10),
+                    color: statusColor.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+                    border: Border.all(
+                      color: statusColor.withValues(alpha: 0.15),
+                      width: AppTheme.hairline,
+                    ),
                   ),
                   child: CompanyLogo.buildLogo(package.companyName, size: 28),
                 ),
@@ -183,25 +192,21 @@ class _InfoCard extends StatelessWidget {
                     children: [
                       Text(
                         package.companyName,
-                        style: const TextStyle(
+                        style: TextStyle(
+                          color: AppTheme.textPrimary(context),
                           fontWeight: FontWeight.w600,
-                          fontSize: 16,
+                          fontSize: AppTheme.fontCardTitle,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: 4),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: statusColor.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
+                        padding: AppTheme.statusPillPadding,
+                        decoration: AppTheme.statusPillDecoration(statusColor),
                         child: Text(
                           package.isSigned ? '已签收' : '未签收',
-                          style: TextStyle(
-                            color: statusColor,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                          ),
+                          style: AppTheme.statusPillTextStyle(statusColor),
                         ),
                       ),
                     ],
@@ -212,9 +217,9 @@ class _InfoCard extends StatelessWidget {
             const Divider(height: 24),
             _trackingRow(context),
             if (package.remark != null && package.remark!.isNotEmpty)
-              _infoRow('物品备注', package.remark!),
-            _infoRow('添加时间', _formatDate(package.addedTime)),
-            _infoRow('更新时间', _formatDate(package.lastTime)),
+              _infoRow(context, '物品备注', package.remark!),
+            _infoRow(context, '添加时间', _formatDate(package.addedTime)),
+            _infoRow(context, '更新时间', _formatDate(package.lastTime)),
           ],
         ),
       ),
@@ -230,11 +235,16 @@ class _InfoCard extends StatelessWidget {
           SizedBox(
             width: 72,
             child: Text('快递单号',
-                style: TextStyle(color: Colors.grey.shade500, fontSize: 14)),
+                style: TextStyle(
+                    color: AppTheme.textSecondary(context),
+                    fontSize: AppTheme.fontBody)),
           ),
           Expanded(
             child: Text(package.trackingNumber,
-                style: const TextStyle(fontSize: 14, letterSpacing: 0.3)),
+                style: TextStyle(
+                    fontSize: AppTheme.fontBody,
+                    color: AppTheme.textPrimary(context),
+                    letterSpacing: 0.3)),
           ),
           InkWell(
             onTap: () {
@@ -247,7 +257,8 @@ class _InfoCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(8),
             child: Padding(
               padding: const EdgeInsets.all(6),
-              child: Icon(Icons.copy, size: 18, color: Colors.grey.shade400),
+              child: Icon(Icons.copy,
+                  size: 18, color: AppTheme.textSecondary(context)),
             ),
           ),
         ],
@@ -255,7 +266,7 @@ class _InfoCard extends StatelessWidget {
     );
   }
 
-  Widget _infoRow(String label, String value) {
+  Widget _infoRow(BuildContext context, String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
@@ -264,10 +275,15 @@ class _InfoCard extends StatelessWidget {
           SizedBox(
             width: 72,
             child: Text(label,
-                style: TextStyle(color: Colors.grey.shade500, fontSize: 14)),
+                style: TextStyle(
+                    color: AppTheme.textSecondary(context),
+                    fontSize: AppTheme.fontBody)),
           ),
           Expanded(
-            child: Text(value, style: const TextStyle(fontSize: 14)),
+            child: Text(value,
+                style: TextStyle(
+                    fontSize: AppTheme.fontBody,
+                    color: AppTheme.textPrimary(context))),
           ),
         ],
       ),
@@ -286,20 +302,28 @@ class _TimelineCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 轨迹时间线圆点/连线用状态色，节点文字两级灰阶（最新一级主色 w600，其余次要色）
+    final statusColor = AppTheme.statusColor(info.state);
+
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppTheme.spacePage),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('物流轨迹',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+            Text('物流轨迹',
+                style: TextStyle(
+                    fontSize: AppTheme.fontCardTitle,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.textPrimary(context))),
             const SizedBox(height: 16),
             if (info.data.isEmpty)
               Center(
                 child: Padding(
                   padding: const EdgeInsets.all(16),
-                  child: Text('暂无轨迹信息', style: TextStyle(color: Colors.grey.shade400)),
+                  child: Text('暂无轨迹信息',
+                      style: TextStyle(
+                          color: AppTheme.textSecondary(context))),
                 ),
               )
             else
@@ -317,6 +341,7 @@ class _TimelineCard extends StatelessWidget {
                     time: event.ftime,
                     isFirst: isFirst,
                     isLast: isLast,
+                    statusColor: statusColor,
                   ),
                 );
               }),
@@ -332,19 +357,19 @@ class _TimelineItem extends StatelessWidget {
   final String time;
   final bool isFirst;
   final bool isLast;
+  final Color statusColor;
 
   const _TimelineItem({
     required this.context,
     required this.time,
     required this.isFirst,
     required this.isLast,
+    required this.statusColor,
   });
 
   @override
   Widget build(BuildContext context) {
-    final color = isFirst
-        ? Theme.of(context).colorScheme.primary
-        : Colors.grey.shade400;
+    final color = isFirst ? statusColor : statusColor.withValues(alpha: 0.45);
     return IntrinsicHeight(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -375,7 +400,8 @@ class _TimelineItem extends StatelessWidget {
                   Expanded(
                     child: Container(
                       width: 2,
-                      color: Colors.grey.shade200,
+                      // 连线延续状态色，压到 20% 透明度保持轻量
+                      color: statusColor.withValues(alpha: 0.2),
                     ),
                   ),
               ],
@@ -391,8 +417,12 @@ class _TimelineItem extends StatelessWidget {
                   Text(
                     this.context,
                     style: TextStyle(
-                      fontSize: 14,
-                      color: isFirst ? null : Colors.grey.shade600,
+                      fontSize: isFirst
+                          ? AppTheme.fontBody
+                          : AppTheme.fontSecondary,
+                      color: isFirst
+                          ? AppTheme.textPrimary(context)
+                          : AppTheme.textSecondary(context),
                       fontWeight:
                           isFirst ? FontWeight.w600 : FontWeight.normal,
                     ),
@@ -400,7 +430,8 @@ class _TimelineItem extends StatelessWidget {
                   const SizedBox(height: 3),
                   Text(time,
                       style: TextStyle(
-                          fontSize: 12, color: Colors.grey.shade400)),
+                          fontSize: AppTheme.fontCaption,
+                          color: AppTheme.textSecondary(context))),
                 ],
               ),
             ),
@@ -498,30 +529,41 @@ class _EtaCardState extends ConsumerState<_EtaCard> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textPrimary =
-        isDark ? AppTheme.darkTextPrimary : AppTheme.lightTextPrimary;
-    final textSecondary =
-        isDark ? AppTheme.darkTextSecondary : AppTheme.lightTextSecondary;
-    final accent = isDark ? AppTheme.primaryDark : AppTheme.primaryBlue;
+    final textPrimary = AppTheme.textPrimary(context);
+    final textSecondary = AppTheme.textSecondary(context);
+    final accent = AppTheme.accent(context);
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    // ETA 卡：左侧 3px 主色条突出「估算」属性，整体仍与信息卡/轨迹卡同一家族
+    return Container(
+      clipBehavior: Clip.antiAlias,
+      decoration: AppTheme.cardDecoration(context),
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('预计送达（估算）',
-                style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: textPrimary)),
-            const SizedBox(height: 12),
-            _buildContent(textSecondary, accent),
-            const SizedBox(height: 12),
-            // 这是估算不是承诺：角注常驻，任何状态都保留标注
-            Text('AI 估算，仅供参考',
-                style: TextStyle(fontSize: 11, color: textSecondary)),
+            Container(width: 3, color: accent),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(AppTheme.spacePage),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('预计送达（估算）',
+                        style: TextStyle(
+                            fontSize: AppTheme.fontCardTitle,
+                            fontWeight: FontWeight.w600,
+                            color: textPrimary)),
+                    const SizedBox(height: 12),
+                    _buildContent(textSecondary, accent),
+                    const SizedBox(height: 12),
+                    // 这是估算不是承诺：角注常驻，任何状态都保留标注
+                    Text('AI 估算，仅供参考',
+                        style: TextStyle(
+                            fontSize: 11, color: textSecondary)),
+                  ],
+                ),
+              ),
+            ),
           ],
         ),
       ),

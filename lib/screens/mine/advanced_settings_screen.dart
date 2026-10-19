@@ -2,8 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../config/theme.dart';
 import '../../providers/settings_provider.dart';
 import '../../services/background_service.dart';
+
+/// 分区标题（与「我的」页同一规格：4px 主色竖条 + 13 w600 次要色，缩进对齐卡片内容）
+Widget _sectionTitle(String title) {
+  return Padding(
+    padding: const EdgeInsets.fromLTRB(28, 8, 16, 4),
+    child: AppTheme.sectionTitle(title),
+  );
+}
 
 class _CustomRulesScreen extends StatefulWidget {
   const _CustomRulesScreen();
@@ -51,17 +60,10 @@ class _CustomRulesScreenState extends State<_CustomRulesScreen> {
       body: ListView(
         children: [
           if (_codePatterns.isNotEmpty) ...[
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 16, 4),
-              child: Text('取件码规则 (${_codePatterns.length})',
-                  style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.grey.shade600,
-                      fontWeight: FontWeight.w500)),
-            ),
+            _sectionTitle('取件码规则 (${_codePatterns.length})'),
             ..._codePatterns.asMap().entries.map((entry) {
               return Card(
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 child: ListTile(
                   title: Text(
                     entry.value,
@@ -70,7 +72,7 @@ class _CustomRulesScreenState extends State<_CustomRulesScreen> {
                     overflow: TextOverflow.ellipsis,
                   ),
                   trailing: IconButton(
-                    icon: const Icon(Icons.delete_outline, color: Colors.red),
+                    icon: const Icon(Icons.delete_outline, color: AppTheme.accentRed),
                     onPressed: () => _removeCodePattern(entry.key),
                   ),
                 ),
@@ -78,21 +80,14 @@ class _CustomRulesScreenState extends State<_CustomRulesScreen> {
             }),
           ],
           if (_ignoreKeywords.isNotEmpty) ...[
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 16, 4),
-              child: Text('忽略关键词 (${_ignoreKeywords.length})',
-                  style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.grey.shade600,
-                      fontWeight: FontWeight.w500)),
-            ),
+            _sectionTitle('忽略关键词 (${_ignoreKeywords.length})'),
             ..._ignoreKeywords.asMap().entries.map((entry) {
               return Card(
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 child: ListTile(
                   title: Text(entry.value),
                   trailing: IconButton(
-                    icon: const Icon(Icons.delete_outline, color: Colors.red),
+                    icon: const Icon(Icons.delete_outline, color: AppTheme.accentRed),
                     onPressed: () => _removeIgnoreKeyword(entry.key),
                   ),
                 ),
@@ -100,18 +95,14 @@ class _CustomRulesScreenState extends State<_CustomRulesScreen> {
             }),
           ],
           if (_codePatterns.isEmpty && _ignoreKeywords.isEmpty)
-            const Center(
-              child: Padding(
-                padding: EdgeInsets.all(64),
-                child: Column(
-                  children: [
-                    Icon(Icons.rule_outlined, size: 64, color: Colors.grey),
-                    SizedBox(height: 16),
-                    Text('暂无自定义规则', style: TextStyle(color: Colors.grey, fontSize: 16)),
-                    SizedBox(height: 8),
-                    Text('在取件码页面解析失败的短信中可添加规则',
-                        style: TextStyle(color: Colors.grey, fontSize: 12)),
-                  ],
+            Padding(
+              padding: const EdgeInsets.all(64),
+              child: Center(
+                child: AppTheme.emptyState(
+                  context,
+                  icon: Icons.rule_outlined,
+                  message: '暂无自定义规则',
+                  hint: '在取件码页面解析失败的短信中可添加规则',
                 ),
               ),
             ),
@@ -171,9 +162,11 @@ class _PickupOverdueSwitchState extends ConsumerState<_PickupOverdueSwitch> {
           : '取件码超过72小时未取件时发送通知'),
       value: enabled,
       onChanged: _requesting ? null : _onChanged,
-      secondary: Icon(
+      secondary: AppTheme.iconPlate(
         enabled ? Icons.notifications_active : Icons.notifications_outlined,
-        color: enabled ? Colors.orange : Colors.grey,
+        color: enabled
+            ? AppTheme.accentOrange
+            : AppTheme.textSecondary(context),
       ),
     );
   }
@@ -194,21 +187,15 @@ class AdvancedSettingsScreen extends ConsumerWidget {
       body: ListView(
         children: [
           const SizedBox(height: 8),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 8, 16, 4),
-            child: Text('外观',
-                style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.grey.shade600,
-                    fontWeight: FontWeight.w500)),
-          ),
+          _sectionTitle('外观'),
           Card(
-            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             child: Column(
               children: [
                 RadioListTile<int>(
                   title: const Text('跟随系统'),
-                  secondary: const Icon(Icons.brightness_auto),
+                  secondary: AppTheme.iconPlate(Icons.brightness_auto,
+                      color: AppTheme.primaryBlue),
                   value: 0,
                   groupValue: themeModeIndex,
                   onChanged: (v) =>
@@ -217,7 +204,8 @@ class AdvancedSettingsScreen extends ConsumerWidget {
                 const Divider(height: 1),
                 RadioListTile<int>(
                   title: const Text('浅色模式'),
-                  secondary: const Icon(Icons.light_mode),
+                  secondary: AppTheme.iconPlate(Icons.light_mode,
+                      color: AppTheme.accentOrange),
                   value: 1,
                   groupValue: themeModeIndex,
                   onChanged: (v) =>
@@ -226,7 +214,8 @@ class AdvancedSettingsScreen extends ConsumerWidget {
                 const Divider(height: 1),
                 RadioListTile<int>(
                   title: const Text('深色模式'),
-                  secondary: const Icon(Icons.dark_mode),
+                  secondary: AppTheme.iconPlate(Icons.dark_mode,
+                      color: AppTheme.accentPurple),
                   value: 2,
                   groupValue: themeModeIndex,
                   onChanged: (v) =>
@@ -236,16 +225,9 @@ class AdvancedSettingsScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 16),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 8, 16, 4),
-            child: Text('功能',
-                style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.grey.shade600,
-                    fontWeight: FontWeight.w500)),
-          ),
+          _sectionTitle('功能'),
           Card(
-            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             child: Column(
               children: [
                 SwitchListTile(
@@ -255,9 +237,11 @@ class AdvancedSettingsScreen extends ConsumerWidget {
                   onChanged: (value) {
                     ref.read(autoSaveProvider.notifier).set(value);
                   },
-                  secondary: Icon(
+                  secondary: AppTheme.iconPlate(
                     autoSave ? Icons.save : Icons.save_outlined,
-                    color: autoSave ? Colors.green : Colors.grey,
+                    color: autoSave
+                        ? AppTheme.accentGreen
+                        : AppTheme.textSecondary(context),
                   ),
                 ),
                 const Divider(height: 1),
@@ -268,11 +252,11 @@ class AdvancedSettingsScreen extends ConsumerWidget {
                   onChanged: (value) {
                     ref.read(autoCleanProvider.notifier).set(value);
                   },
-                  secondary: Icon(
-                    autoClean
-                        ? Icons.auto_delete
-                        : Icons.auto_delete_outlined,
-                    color: autoClean ? Colors.green : Colors.grey,
+                  secondary: AppTheme.iconPlate(
+                    autoClean ? Icons.auto_delete : Icons.auto_delete_outlined,
+                    color: autoClean
+                        ? AppTheme.accentGreen
+                        : AppTheme.textSecondary(context),
                   ),
                 ),
                 const Divider(height: 1),
@@ -283,31 +267,27 @@ class AdvancedSettingsScreen extends ConsumerWidget {
                   onChanged: (value) {
                     ref.read(hideCompletedPickupsProvider.notifier).set(value);
                   },
-                  secondary: Icon(
+                  secondary: AppTheme.iconPlate(
                     hideCompleted ? Icons.visibility_off : Icons.visibility,
-                    color: hideCompleted ? Colors.green : Colors.grey,
+                    color: hideCompleted
+                        ? AppTheme.accentGreen
+                        : AppTheme.textSecondary(context),
                   ),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 16),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 8, 16, 4),
-            child: Text('取件码',
-                style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.grey.shade600,
-                    fontWeight: FontWeight.w500)),
-          ),
+          _sectionTitle('取件码'),
           Card(
-            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             child: Column(
               children: [
                 _PickupOverdueSwitch(),
                 const Divider(height: 1),
                 ListTile(
-                  leading: const Icon(Icons.rule, color: Colors.blue),
+                  leading: AppTheme.iconPlate(Icons.rule,
+                      color: AppTheme.primaryBlue),
                   title: const Text('自定义解析规则'),
                   subtitle: const Text('查看和管理自定义的取件码解析规则'),
                   trailing: const Icon(Icons.chevron_right),
