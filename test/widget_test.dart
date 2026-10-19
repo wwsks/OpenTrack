@@ -70,6 +70,15 @@ void main() {
       );
     });
 
+    testWidgets('底部展示「启用后可用功能」三行简介（逐字）', (WidgetTester tester) async {
+      await pumpLlmSettings(tester);
+
+      expect(find.text('启用后可用功能'), findsOneWidget);
+      expect(find.text('取件码智能分组 · 同一驿站自动合并'), findsOneWidget);
+      expect(find.text('取件清单 · 一键生成到站取件清单'), findsOneWidget);
+      expect(find.text('送达估算 · 详情页显示预计送达时间'), findsOneWidget);
+    });
+
     testWidgets('测试连接失败时错误提示标红', (WidgetTester tester) async {
       await pumpLlmSettings(tester);
 

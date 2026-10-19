@@ -165,6 +165,8 @@ class _LlmSettingsScreenState extends ConsumerState<LlmSettingsScreen> {
               ),
               child: const Text('测试连接'),
             ),
+            const SizedBox(height: AppTheme.spaceBlock),
+            _buildFeatureIntro(),
             const SizedBox(height: 16),
             const Text(
               '地址、取件码与物流轨迹等数据将发送至你配置的模型服务，请谨慎选择服务提供方。'
@@ -178,6 +180,80 @@ class _LlmSettingsScreenState extends ConsumerState<LlmSettingsScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  /// 「启用后可用功能」轻量区块：分区标题 + 三行着色图标底板 + 13px 文案，
+  /// 安静低调，不抢开关/输入框的视觉重心
+  Widget _buildFeatureIntro() {
+    return Container(
+      decoration: AppTheme.cardDecoration(context),
+      padding: const EdgeInsets.all(AppTheme.spacePage),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              // 分区标题前缀：4px 主色小竖条
+              Container(
+                width: 4,
+                height: AppTheme.fontSecondary,
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryBlue,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(width: AppTheme.spaceRow),
+              const Text(
+                '启用后可用功能',
+                style: TextStyle(
+                  fontSize: AppTheme.fontSecondary,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.lightTextSecondary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _buildFeatureRow(
+            Icons.auto_awesome_outlined,
+            AppTheme.primaryBlue,
+            '取件码智能分组 · 同一驿站自动合并',
+          ),
+          const SizedBox(height: AppTheme.spaceRow),
+          _buildFeatureRow(
+            Icons.checklist,
+            AppTheme.accentGreen,
+            '取件清单 · 一键生成到站取件清单',
+          ),
+          const SizedBox(height: AppTheme.spaceRow),
+          _buildFeatureRow(
+            Icons.schedule,
+            AppTheme.accentPurple,
+            '送达估算 · 详情页显示预计送达时间',
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 功能简介行：着色小图标底板 + 13px 次要色文案
+  Widget _buildFeatureRow(IconData icon, Color color, String text) {
+    return Row(
+      children: [
+        AppTheme.iconPlate(icon, color: color),
+        const SizedBox(width: AppTheme.spaceIconText),
+        Expanded(
+          child: Text(
+            text,
+            style: const TextStyle(
+              fontSize: AppTheme.fontSecondary,
+              color: AppTheme.lightTextSecondary,
+              height: 1.4,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
