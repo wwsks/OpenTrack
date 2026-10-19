@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../animations/pressable_card.dart';
+
 class AppTheme {
   // Telegram-inspired palette
   static const Color primaryBlue = Color(0xFF3390EC);
@@ -118,7 +120,8 @@ class AppTheme {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(radiusMd),
         ),
-        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
+        // 卡片间距节奏：垂直 4 → 相邻卡片 8px（行间距刻度）
+        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       ),
       dividerTheme: const DividerThemeData(
         color: lightDivider,
@@ -185,6 +188,13 @@ class AppTheme {
           borderRadius: BorderRadius.circular(radiusSm),
         ),
         contentTextStyle: const TextStyle(fontSize: 14),
+      ),
+      // 开关统一用主题色（浅色 primaryBlue）：选中态拇指取主题色，其余状态走默认
+      switchTheme: SwitchThemeData(
+        thumbColor: WidgetStateProperty.resolveWith(
+          (states) =>
+              states.contains(WidgetState.selected) ? primaryBlue : null,
+        ),
       ),
       tabBarTheme: const TabBarTheme(
         labelColor: primaryBlue,
@@ -257,7 +267,8 @@ class AppTheme {
           borderRadius: BorderRadius.circular(radiusMd),
           side: const BorderSide(color: darkDivider, width: hairline),
         ),
-        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
+        // 卡片间距节奏：垂直 4 → 相邻卡片 8px（行间距刻度）
+        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       ),
       dividerTheme: const DividerThemeData(
         color: darkDivider,
@@ -324,6 +335,13 @@ class AppTheme {
           borderRadius: BorderRadius.circular(radiusSm),
         ),
         contentTextStyle: const TextStyle(fontSize: 14),
+      ),
+      // 开关统一用主题色（深色 primaryDark）：选中态拇指取主题色，其余状态走默认
+      switchTheme: SwitchThemeData(
+        thumbColor: WidgetStateProperty.resolveWith(
+          (states) =>
+              states.contains(WidgetState.selected) ? primaryDark : null,
+        ),
       ),
       tabBarTheme: const TabBarTheme(
         labelColor: primaryDark,
@@ -437,6 +455,144 @@ class AppTheme {
       alignment: Alignment.center,
       decoration: iconPlateDecoration(color),
       child: Icon(icon, size: size * 0.55, color: color),
+    );
+  }
+
+  /// 文字主色：按主题亮度取显式文字色（不依赖 ColorScheme 默认值）
+  static Color textPrimary(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark
+          ? darkTextPrimary
+          : lightTextPrimary;
+
+  /// 文字次色：按主题亮度取显式文字色
+  static Color textSecondary(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark
+          ? darkTextSecondary
+          : lightTextSecondary;
+
+  /// 主题强调蓝：浅色 primaryBlue / 深色 primaryDark（图标、强调文案等统一取它）
+  static Color accent(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark
+          ? primaryDark
+          : primaryBlue;
+
+  /// 分区标题：4px 主色小竖条前缀 + 13 w600 次要色
+  static Widget sectionTitle(String title) {
+    return Builder(builder: (context) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 4,
+            height: fontSecondary,
+            decoration: BoxDecoration(
+              color: accent(context),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(width: spaceRow),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: fontSecondary,
+              fontWeight: FontWeight.w600,
+              color: textSecondary(context),
+            ),
+          ),
+        ],
+      );
+    });
+  }
+
+  /// 空状态：64px 着色圆底 + 品牌色图标 + 一句话说明（次要色 13px），可带一行 12px 提示。
+  /// [color] 覆盖圆底/图标色（如错误态传 accentRed），默认品牌强调色
+  static Widget emptyState(
+    BuildContext context, {
+    required IconData icon,
+    required String message,
+    String? hint,
+    Color? color,
+  }) {
+    final accentColor = color ?? accent(context);
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 64,
+          height: 64,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: accentColor.withValues(alpha: 0.12),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, size: 28, color: accentColor),
+        ),
+        const SizedBox(height: 16),
+        Text(
+          message,
+          style: TextStyle(
+            fontSize: fontSecondary,
+            color: textSecondary(context),
+          ),
+        ),
+        if (hint != null) ...[
+          const SizedBox(height: spaceRow),
+          Text(
+            hint,
+            style: TextStyle(
+              fontSize: fontCaption,
+              color: textSecondary(context),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  /// 主按钮（极轻渐变）：白色 w600 文案 + PressableCard 按压反馈。
+  /// 页面主行动作（查询、生成取件清单等）统一用它，次要动作用 OutlinedButton；
+  /// [onTap] 为 null / [enabled] 为 false / [busy] 为 true 时降透明度且不可点。
+  static Widget primaryButton({
+    required String label,
+    VoidCallback? onTap,
+    IconData? icon,
+    bool enabled = true,
+    bool busy = false,
+  }) {
+    final active = enabled && !busy && onTap != null;
+    return Opacity(
+      opacity: active ? 1 : 0.5,
+      child: PressableCard(
+        onTap: active ? onTap : null,
+        borderRadius: BorderRadius.circular(radiusMd),
+        child: Container(
+          height: 48,
+          alignment: Alignment.center,
+          decoration: primaryButtonDecoration(),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (busy)
+                const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                )
+              else if (icon != null)
+                Icon(icon, size: 18, color: Colors.white),
+              if (busy || icon != null) const SizedBox(width: spaceRow),
+              Text(
+                label,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: fontBody,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

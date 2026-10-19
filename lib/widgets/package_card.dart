@@ -4,6 +4,9 @@ import '../utils/company_logo.dart';
 import '../config/theme.dart';
 import '../animations/pressable_card.dart';
 
+/// 首页快递卡片（设计简报「各页面视觉统一 · 首页」）：
+/// logo 统一底板 + 公司名 16 w600 + 时间右上角次要色 + 单号 13 w600 + 状态 pill。
+/// 卡片内边距 16、圆角/阴影走 Card 主题，长公司名/长单号/长轨迹均截断防 overflow。
 class PackageCard extends StatelessWidget {
   final Package package;
   final VoidCallback? onTap;
@@ -20,14 +23,14 @@ class PackageCard extends StatelessWidget {
       onTap: onTap,
       child: Card(
         child: Padding(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.all(AppTheme.spacePage),
           child: Row(
             children: [
               _AnimatedStatusLogo(
                 companyName: package.companyName,
                 status: package.status,
               ),
-              const SizedBox(width: 14),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -37,23 +40,38 @@ class PackageCard extends StatelessWidget {
                         Expanded(
                           child: Text(
                             package.companyName,
-                            style: const TextStyle(
+                            style: TextStyle(
+                              color: AppTheme.textPrimary(context),
                               fontWeight: FontWeight.w600,
-                              fontSize: 15,
+                              fontSize: AppTheme.fontCardTitle,
                             ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        _StatusDot(status: package.status),
+                        const SizedBox(width: AppTheme.spaceRow),
+                        // 更新时间固定右上角，次要色辅助文字
+                        Text(
+                          _formatTime(package.lastTime),
+                          style: TextStyle(
+                            color: AppTheme.textSecondary(context),
+                            fontSize: AppTheme.fontCaption,
+                          ),
+                        ),
                       ],
                     ),
-                    const SizedBox(height: 3),
+                    const SizedBox(height: 4),
+                    // 单号用 w600 突出（数字/单号约定），超长截断
                     Text(
                       package.trackingNumber,
                       style: TextStyle(
-                        color: Colors.grey.shade500,
-                        fontSize: 13,
+                        color: AppTheme.textPrimary(context),
+                        fontWeight: FontWeight.w600,
+                        fontSize: AppTheme.fontSecondary,
                         letterSpacing: 0.3,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     if (package.remark != null &&
                         package.remark!.isNotEmpty) ...[
@@ -61,8 +79,8 @@ class PackageCard extends StatelessWidget {
                       Text(
                         package.remark!,
                         style: TextStyle(
-                          color: Colors.grey.shade600,
-                          fontSize: 12,
+                          color: AppTheme.textSecondary(context),
+                          fontSize: AppTheme.fontCaption,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -72,19 +90,16 @@ class PackageCard extends StatelessWidget {
                       const SizedBox(height: 6),
                       Text(
                         package.lastContext,
-                        style: const TextStyle(fontSize: 13),
+                        style: TextStyle(
+                          color: AppTheme.textPrimary(context),
+                          fontSize: AppTheme.fontSecondary,
+                        ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ],
-                    const SizedBox(height: 4),
-                    Text(
-                      _formatTime(package.lastTime),
-                      style: TextStyle(
-                        color: Colors.grey.shade400,
-                        fontSize: 11,
-                      ),
-                    ),
+                    const SizedBox(height: AppTheme.spaceRow),
+                    _StatusPill(status: package.status),
                   ],
                 ),
               ),
@@ -102,6 +117,25 @@ class PackageCard extends StatelessWidget {
     }
     return '${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')} '
         '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+  }
+}
+
+/// 状态 pill：12% 状态色底 + 状态色字 12 w600（全局规范，映射沿用 statusColor/statusText）
+class _StatusPill extends StatelessWidget {
+  final String status;
+  const _StatusPill({required this.status});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = AppTheme.statusColor(status);
+    return Container(
+      padding: AppTheme.statusPillPadding,
+      decoration: AppTheme.statusPillDecoration(color),
+      child: Text(
+        AppTheme.statusText(status),
+        style: AppTheme.statusPillTextStyle(color),
+      ),
+    );
   }
 }
 
@@ -170,100 +204,13 @@ class _AnimatedStatusLogoState extends State<_AnimatedStatusLogo>
           height: 44,
           decoration: BoxDecoration(
             color: statusColor.withValues(alpha: bgOpacity),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(AppTheme.radiusSm),
             border: Border.all(
               color: statusColor.withValues(alpha: 0.15 + (pulseValue * 0.1)),
-              width: 1,
+              width: AppTheme.hairline,
             ),
           ),
           child: CompanyLogo.buildLogo(widget.companyName, size: 28),
-        );
-      },
-    );
-  }
-}
-
-class _StatusDot extends StatefulWidget {
-  final String status;
-  const _StatusDot({required this.status});
-
-  @override
-  State<_StatusDot> createState() => _StatusDotState();
-}
-
-class _StatusDotState extends State<_StatusDot>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _glowAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1500),
-    );
-    _glowAnimation = Tween<double>(begin: 0.3, end: 0.8).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
-
-    if (widget.status == '0' || widget.status == '5') {
-      _controller.repeat(reverse: true);
-    }
-  }
-
-  @override
-  void didUpdateWidget(_StatusDot oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.status != oldWidget.status) {
-      if (widget.status == '0' || widget.status == '5') {
-        _controller.repeat(reverse: true);
-      } else {
-        _controller.stop();
-        _controller.value = 0;
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final color = AppTheme.statusColor(widget.status);
-    final isActive = widget.status == '0' || widget.status == '5';
-
-    if (!isActive) {
-      return Container(
-        width: 8,
-        height: 8,
-        decoration: BoxDecoration(
-          color: color,
-          shape: BoxShape.circle,
-        ),
-      );
-    }
-
-    return AnimatedBuilder(
-      animation: _glowAnimation,
-      builder: (context, child) {
-        return Container(
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: color.withValues(alpha: _glowAnimation.value * 0.5),
-                blurRadius: 4 + (_glowAnimation.value * 2),
-                spreadRadius: _glowAnimation.value,
-              ),
-            ],
-          ),
         );
       },
     );
