@@ -24,7 +24,7 @@ class _FakeLlmService extends LlmService {
     required String user,
     bool jsonMode = false,
   }) async {
-    return '长春理工南区菜鸟驿站\n3201\n\n总计：1 个驿站 1 件';
+    return '临江南区菜鸟驿站\n3201\n\n总计：1 个驿站 1 件';
   }
 }
 
@@ -43,14 +43,14 @@ void main() {
   group('buildPickupListPrompt', () {
     test('包含每项的地址与取件码，柜号为空的行不含「柜号」字样', () {
       final prompt = buildPickupListPrompt([
-        _sms('长春理工南区菜鸟驿站', '3201', lockerNumber: '5-2-103'),
+        _sms('临江南区菜鸟驿站', '3201', lockerNumber: '5-2-103'),
         _sms('重庆市渝北区龙兴菜鸟驿站', '88, 91'),
       ]);
 
       // 有柜号：输出「驿站：xx｜取件码：xx｜柜号：xx」
       expect(
         prompt,
-        contains('驿站：长春理工南区菜鸟驿站｜取件码：3201｜柜号：5-2-103'),
+        contains('驿站：临江南区菜鸟驿站｜取件码：3201｜柜号：5-2-103'),
       );
 
       // 无柜号：省略柜号段，整行不含「柜号」字样；多取件码原样透传
@@ -155,12 +155,12 @@ void main() {
   group('etaCacheKey', () {
     test('轨迹文本变化导致缓存失效：时间不同则键不同，同输入则相等', () {
       expect(
-        etaCacheKey('已到达长春转运中心', '2026-10-18 10:00'),
-        isNot(etaCacheKey('已到达长春转运中心', '2026-10-18 12:00')),
+        etaCacheKey('已到达临江转运中心', '2026-10-18 10:00'),
+        isNot(etaCacheKey('已到达临江转运中心', '2026-10-18 12:00')),
       );
       expect(
-        etaCacheKey('已到达长春转运中心', '2026-10-18 10:00'),
-        etaCacheKey('已到达长春转运中心', '2026-10-18 10:00'),
+        etaCacheKey('已到达临江转运中心', '2026-10-18 10:00'),
+        etaCacheKey('已到达临江转运中心', '2026-10-18 10:00'),
       );
     });
   });

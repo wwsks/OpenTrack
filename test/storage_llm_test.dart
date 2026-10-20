@@ -33,7 +33,7 @@ void main() {
 
   group('LLM 缓存存取', () {
     test('setLlmAddressMap 后 getLlmAddressMap 原样返回', () async {
-      const map = {'长春理工南区菜鸟驿站': '长春理工大学南区菜鸟驿站'};
+      const map = {'临江南区菜鸟驿站': '临江大学南区菜鸟驿站'};
       await storage.setLlmAddressMap(map);
       expect(await storage.getLlmAddressMap(), map);
     });

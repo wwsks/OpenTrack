@@ -19,19 +19,19 @@ class _FakeNormalizer implements AddressNormalizer {
 void main() {
   final parser = SmsParser();
 
-  const addressA = '长春理工南区菜鸟驿站';
-  const addressB = '长春理工大学南区菜鸟驿站';
-  const standardName = '长春理工大学南区菜鸟驿站';
+  const addressA = '临江南区菜鸟驿站';
+  const addressB = '临江大学南区菜鸟驿站';
+  const standardName = '临江大学南区菜鸟驿站';
 
   List<SmsModel> twoMessages() => [
         SmsModel(
           id: '1',
-          body: '【极兔速递】请凭3-2-5031到长春理工南区菜鸟驿站取运单尾号2081包裹',
+          body: '【极兔速递】请凭3-2-5031到临江南区菜鸟驿站取运单尾号2081包裹',
           timestamp: 1760000000000,
         ),
         SmsModel(
           id: '2',
-          body: '【圆通快递】请凭4-6-3017到长春理工大学南区菜鸟驿站取运单尾号6799包裹',
+          body: '【圆通快递】请凭4-6-3017到临江大学南区菜鸟驿站取运单尾号6799包裹',
           timestamp: 1760000060000,
         ),
       ];

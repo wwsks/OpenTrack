@@ -39,7 +39,7 @@ void main() {
   group('LlmAddressNormalizer', () {
     test('缓存已有条目时不调用 bulkQuery，直接返回', () async {
       await storage.setLlmAddressMap({
-        '长春理工南区菜鸟驿站': '长春理工大学南区菜鸟驿站',
+        '临江南区菜鸟驿站': '临江大学南区菜鸟驿站',
       });
       storage.setCalls = 0;
 
@@ -53,15 +53,15 @@ void main() {
         },
       );
 
-      final result = await normalizer.normalizeAll(['长春理工南区菜鸟驿站']);
+      final result = await normalizer.normalizeAll(['临江南区菜鸟驿站']);
 
-      expect(result, {'长春理工南区菜鸟驿站': '长春理工大学南区菜鸟驿站'});
+      expect(result, {'临江南区菜鸟驿站': '临江大学南区菜鸟驿站'});
       expect(bulkCalls, 0);
     });
 
     test('未命中地址批量调用一次 bulkQuery，返回映射与缓存合并后写入 storage', () async {
       await storage.setLlmAddressMap({
-        '长春理工南区菜鸟驿站': '长春理工大学南区菜鸟驿站',
+        '临江南区菜鸟驿站': '临江大学南区菜鸟驿站',
       });
       storage.setCalls = 0;
 
@@ -73,36 +73,36 @@ void main() {
         bulkQuery: (addresses) async {
           bulkCalls++;
           queried = addresses;
-          return '{"长春理工大学南校区服务站":"长春理工大学南校区服务站",'
+          return '{"临江大学南校区服务站":"临江大学南校区服务站",'
               '"重庆市渝北区龙兴菜鸟驿站":"重庆龙兴菜鸟驿站"}';
         },
       );
 
       final result = await normalizer.normalizeAll([
-        '长春理工南区菜鸟驿站',
-        '长春理工大学南校区服务站',
+        '临江南区菜鸟驿站',
+        '临江大学南校区服务站',
         '重庆市渝北区龙兴菜鸟驿站',
       ]);
 
       expect(bulkCalls, 1);
-      expect(queried, ['长春理工大学南校区服务站', '重庆市渝北区龙兴菜鸟驿站']);
+      expect(queried, ['临江大学南校区服务站', '重庆市渝北区龙兴菜鸟驿站']);
       expect(result, {
-        '长春理工南区菜鸟驿站': '长春理工大学南区菜鸟驿站',
-        '长春理工大学南校区服务站': '长春理工大学南校区服务站',
+        '临江南区菜鸟驿站': '临江大学南区菜鸟驿站',
+        '临江大学南校区服务站': '临江大学南校区服务站',
         '重庆市渝北区龙兴菜鸟驿站': '重庆龙兴菜鸟驿站',
       });
       // 缓存已有条目 + 本次返回条目合并写入
       expect(storage.setCalls, 1);
       expect(await storage.getLlmAddressMap(), {
-        '长春理工南区菜鸟驿站': '长春理工大学南区菜鸟驿站',
-        '长春理工大学南校区服务站': '长春理工大学南校区服务站',
+        '临江南区菜鸟驿站': '临江大学南区菜鸟驿站',
+        '临江大学南校区服务站': '临江大学南校区服务站',
         '重庆市渝北区龙兴菜鸟驿站': '重庆龙兴菜鸟驿站',
       });
     });
 
     test('bulkQuery 抛异常时未命中原样返回，且不写缓存', () async {
       await storage.setLlmAddressMap({
-        '长春理工南区菜鸟驿站': '长春理工大学南区菜鸟驿站',
+        '临江南区菜鸟驿站': '临江大学南区菜鸟驿站',
       });
       storage.setCalls = 0;
 
@@ -113,12 +113,12 @@ void main() {
       );
 
       final result = await normalizer.normalizeAll([
-        '长春理工南区菜鸟驿站',
+        '临江南区菜鸟驿站',
         '重庆市渝北区龙兴菜鸟驿站',
       ]);
 
       expect(result, {
-        '长春理工南区菜鸟驿站': '长春理工大学南区菜鸟驿站',
+        '临江南区菜鸟驿站': '临江大学南区菜鸟驿站',
         '重庆市渝北区龙兴菜鸟驿站': '重庆市渝北区龙兴菜鸟驿站',
       });
       expect(storage.setCalls, 0);
@@ -132,12 +132,12 @@ void main() {
       );
 
       final result = await normalizer.normalizeAll([
-        '长春理工南区菜鸟驿站',
+        '临江南区菜鸟驿站',
         '重庆市渝北区龙兴菜鸟驿站',
       ]);
 
       expect(result, {
-        '长春理工南区菜鸟驿站': '长春理工南区菜鸟驿站',
+        '临江南区菜鸟驿站': '临江南区菜鸟驿站',
         '重庆市渝北区龙兴菜鸟驿站': '重庆市渝北区龙兴菜鸟驿站',
       });
       expect(storage.setCalls, 0);
@@ -149,16 +149,16 @@ void main() {
         llm: llm,
         storage: storage,
         bulkQuery: (addresses) async {
-          return '{"长春理工南区菜鸟驿站":"长春理工大学南区菜鸟驿站",'
+          return '{"临江南区菜鸟驿站":"临江大学南区菜鸟驿站",'
               '"输入之外的驿站":"不该写入缓存"}';
         },
       );
 
-      final result = await normalizer.normalizeAll(['长春理工南区菜鸟驿站']);
+      final result = await normalizer.normalizeAll(['临江南区菜鸟驿站']);
 
-      expect(result, {'长春理工南区菜鸟驿站': '长春理工大学南区菜鸟驿站'});
+      expect(result, {'临江南区菜鸟驿站': '临江大学南区菜鸟驿站'});
       expect(await storage.getLlmAddressMap(),
-          {'长春理工南区菜鸟驿站': '长春理工大学南区菜鸟驿站'});
+          {'临江南区菜鸟驿站': '临江大学南区菜鸟驿站'});
     });
 
     test('LLM 返回的非字符串或空值条目不进缓存', () async {
@@ -166,17 +166,17 @@ void main() {
         llm: llm,
         storage: storage,
         bulkQuery: (addresses) async {
-          return '{"长春理工南区菜鸟驿站":123,"重庆市渝北区龙兴菜鸟驿站":""}';
+          return '{"临江南区菜鸟驿站":123,"重庆市渝北区龙兴菜鸟驿站":""}';
         },
       );
 
       final result = await normalizer.normalizeAll([
-        '长春理工南区菜鸟驿站',
+        '临江南区菜鸟驿站',
         '重庆市渝北区龙兴菜鸟驿站',
       ]);
 
       expect(result, {
-        '长春理工南区菜鸟驿站': '长春理工南区菜鸟驿站',
+        '临江南区菜鸟驿站': '临江南区菜鸟驿站',
         '重庆市渝北区龙兴菜鸟驿站': '重庆市渝北区龙兴菜鸟驿站',
       });
       // 无效条目被过滤后不进缓存
@@ -191,15 +191,15 @@ void main() {
         storage: throwingStorage,
         bulkQuery: (addresses) async {
           bulkCalls++;
-          return '{"长春理工南区菜鸟驿站":"长春理工大学南区菜鸟驿站"}';
+          return '{"临江南区菜鸟驿站":"临江大学南区菜鸟驿站"}';
         },
       );
 
-      final result = await normalizer.normalizeAll(['长春理工南区菜鸟驿站']);
+      final result = await normalizer.normalizeAll(['临江南区菜鸟驿站']);
 
       // 缓存读取失败降级为空缓存，仍正常走批量归一化
       expect(bulkCalls, 1);
-      expect(result, {'长春理工南区菜鸟驿站': '长春理工大学南区菜鸟驿站'});
+      expect(result, {'临江南区菜鸟驿站': '临江大学南区菜鸟驿站'});
     });
   });
 }

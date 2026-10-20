@@ -67,30 +67,30 @@ void main() {
       );
 
       final result = await normalizer.normalizeAll([
-        '长春理工南区菜鸟驿站',
-        '长春理工大学南区菜鸟驿站',
+        '临江南区菜鸟驿站',
+        '临江大学南区菜鸟驿站',
         '重庆市渝北区龙兴菜鸟驿站',
       ]);
 
       // 前两者是同一站点的不同表述，必须归一到同一名
       expect(
-        result['长春理工南区菜鸟驿站'],
-        result['长春理工大学南区菜鸟驿站'],
+        result['临江南区菜鸟驿站'],
+        result['临江大学南区菜鸟驿站'],
         reason: '同站两表述应归一同名（若失败可能是 LLM 调用被降级为原样返回）：$result',
       );
       // 第三者是不同站点，绝不能与前者同名（防误合并）
       expect(
         result['重庆市渝北区龙兴菜鸟驿站'],
-        isNot(result['长春理工南区菜鸟驿站']),
+        isNot(result['临江南区菜鸟驿站']),
         reason: '不同站点不得误合并：$result',
       );
-      expect(result['长春理工南区菜鸟驿站']!.trim(), isNotEmpty);
+      expect(result['临江南区菜鸟驿站']!.trim(), isNotEmpty);
     }, timeout: const Timeout(Duration(minutes: 2)));
 
     test('取件清单：两个驿站各 2 个取件码，返回非空清单且含两个驿站名', () async {
       final items = [
-        _sms('长春理工南区菜鸟驿站', '3201', lockerNumber: 'A-1'),
-        _sms('长春理工南区菜鸟驿站', '3202', lockerNumber: 'A-2'),
+        _sms('临江南区菜鸟驿站', '3201', lockerNumber: 'A-1'),
+        _sms('临江南区菜鸟驿站', '3202', lockerNumber: 'A-2'),
         _sms('重庆市渝北区龙兴菜鸟驿站', '66'),
         _sms('重庆市渝北区龙兴菜鸟驿站', '88'),
       ];
@@ -101,7 +101,7 @@ void main() {
       );
 
       expect(text.trim(), isNotEmpty);
-      expect(text, contains('长春理工南区菜鸟驿站'), reason: '清单应包含驿站名：$text');
+      expect(text, contains('临江南区菜鸟驿站'), reason: '清单应包含驿站名：$text');
       expect(text, contains('重庆市渝北区龙兴菜鸟驿站'), reason: '清单应包含驿站名：$text');
     }, timeout: const Timeout(Duration(minutes: 2)));
 
@@ -110,7 +110,7 @@ void main() {
         system: kEtaSystemPrompt,
         user: buildEtaPrompt(
           companyName: '顺丰速运',
-          traceContext: '快件已到达【长春转运中心】，已发出，正发往【重庆渝北龙兴营业点】',
+          traceContext: '快件已到达【临江转运中心】，已发出，正发往【重庆渝北龙兴营业点】',
           traceTime: '2026-10-18 08:30:00',
         ),
       );
