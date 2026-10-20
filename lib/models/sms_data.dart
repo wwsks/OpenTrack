@@ -8,6 +8,9 @@ class SmsData {
   bool isCompleted;
   final String lockerNumber;
 
+  /// 是否由 LLM 从正则解析失败的短信中兜底提取
+  final bool extractedByLlm;
+
   SmsData({
     required this.address,
     required this.code,
@@ -15,5 +18,6 @@ class SmsData {
     required this.id,
     this.isCompleted = false,
     this.lockerNumber = '',
+    this.extractedByLlm = false,
   });
 }

@@ -1,6 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:opentrack/models/sms_data.dart';
 import 'package:opentrack/models/sms_model.dart';
 import 'package:opentrack/utils/address_normalizer.dart';
+import 'package:opentrack/utils/sms_fallback_extractor.dart';
 import 'package:opentrack/utils/sms_parser.dart';
 import 'package:opentrack/utils/sms_processor.dart';
 
@@ -13,6 +15,19 @@ class _FakeNormalizer implements AddressNormalizer {
   @override
   Future<Map<String, String>> normalizeAll(List<String> addresses) async {
     return {for (final a in addresses) a: mapping[a] ?? a};
+  }
+}
+
+/// 可配置行为的假兜底提取器
+class _FakeFallback implements SmsFallbackExtractor {
+  _FakeFallback({this.onExtract});
+
+  final Future<List<SmsData>> Function(List<SmsModel> failed)? onExtract;
+
+  @override
+  Future<List<SmsData>> extractFailed(List<SmsModel> failed) async {
+    if (onExtract != null) return onExtract!(failed);
+    return [];
   }
 }
 
@@ -70,5 +85,84 @@ void main() {
 
     expect(result.parcels.length, 2);
     expect(result.parcels.map((p) => p.address).toSet(), {addressA, addressB});
+  });
+
+  group('LLM 兜底提取', () {
+    SmsModel unparseable() => SmsModel(
+          id: '9',
+          body: '【菜鸟】您的包裹已到楼下，请尽快来取一下哦',
+          timestamp: 1760000120000,
+        );
+
+    test('恢复的短信移出 failed 并入成功流分组', () async {
+      final fallback = _FakeFallback(onExtract: (failed) async {
+        return [
+          SmsData(
+            address: addressA,
+            code: '9-1-2048',
+            sms: failed.first,
+            id: '${failed.first.id}_${failed.first.timestamp}',
+            lockerNumber: '5-2-103',
+            extractedByLlm: true,
+          ),
+        ];
+      });
+
+      final result = await SmsProcessor.process(
+        [...twoMessages(), unparseable()],
+        parser,
+        [],
+        fallback: fallback,
+      );
+
+      expect(result.failed, isEmpty);
+      expect(result.successful.length, 3);
+      expect(
+          result.successful.where((s) => s.extractedByLlm).length, 1);
+      // 恢复条目走同一分组管线（addressA 组含原始 + 恢复两条）
+      final groupA =
+          result.parcels.firstWhere((p) => p.address == addressA);
+      expect(groupA.smsDataList.length, 2);
+    });
+
+    test('fallback 返回空时 failed 原样保留', () async {
+      final result = await SmsProcessor.process(
+        [...twoMessages(), unparseable()],
+        parser,
+        [],
+        fallback: _FakeFallback(),
+      );
+
+      expect(result.failed.length, 1);
+      expect(result.failed.first.id, '9');
+      expect(result.successful.length, 2);
+    });
+
+    test('fallback 抛异常时 failed 原样保留且不影响主流程', () async {
+      final fallback = _FakeFallback(
+        onExtract: (failed) async => throw Exception('LLM 挂了'),
+      );
+
+      final result = await SmsProcessor.process(
+        [...twoMessages(), unparseable()],
+        parser,
+        [],
+        fallback: fallback,
+      );
+
+      expect(result.failed.length, 1);
+      expect(result.successful.length, 2);
+    });
+
+    test('null fallback 保持现状（failed 不走 LLM）', () async {
+      final result = await SmsProcessor.process(
+        [...twoMessages(), unparseable()],
+        parser,
+        [],
+      );
+
+      expect(result.failed.length, 1);
+      expect(result.successful.length, 2);
+    });
   });
 }

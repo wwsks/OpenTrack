@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart';
 
 import '../models/sms_data.dart';
+import '../models/sms_model.dart';
 import '../services/llm_service.dart';
 
 /// 地址归一化 system prompt：三条规则逐字写入，防止误合并
@@ -73,3 +74,23 @@ EtaEstimate? tryParseEta(String text) {
 /// ETA 缓存键：最新轨迹文本 + 时间的 MD5，轨迹一变缓存自然失效
 String etaCacheKey(String traceContext, String traceTime) =>
     md5.convert(utf8.encode('$traceContext|$traceTime')).toString();
+
+/// 失败短信兜底提取 system prompt：只输出 JSON，提不出的条目省略、严禁编造
+const String kFallbackExtractSystemPrompt = '''
+你是快递短信取件信息提取助手。下面给你若干条带编号的短信，它们都没能被规则解析。
+只输出 JSON 对象，格式：{"<编号>": {"code": "取件码", "address": "取件地址", "locker": "柜号"}}
+规则：
+1. code 是取件码（如 "3-2-5031"、"J-2-5216"、"88, 91"），提不出取件码的条目一律省略，严禁编造；
+2. address 是取件地点（驿站/服务站/快递柜），提不出则填 "未知地址"；
+3. locker 是柜号/货架号，没有则填空字符串；
+4. 没有有效取件信息的条目不要出现在输出中，不要输出任何解释文字。
+''';
+
+/// 构造失败短信兜底提取的用户消息：每条一行「N. 短信内容」，N 从 1 开始
+String buildFallbackExtractPrompt(List<SmsModel> items) {
+  final sb = StringBuffer();
+  for (var i = 0; i < items.length; i++) {
+    sb.writeln('${i + 1}. ${items[i].body}');
+  }
+  return sb.toString().trimRight();
+}

@@ -3,6 +3,7 @@ import '../models/sms_model.dart';
 import '../models/sms_data.dart';
 import '../models/parcel_data.dart';
 import 'address_normalizer.dart';
+import 'sms_fallback_extractor.dart';
 import 'sms_parser.dart';
 import 'sms_util.dart';
 
@@ -38,10 +39,12 @@ class SmsProcessor {
     required SmsParser parser,
     required List<String> completedIds,
     AddressNormalizer? normalizer,
+    SmsFallbackExtractor? fallback,
   }) async {
     await loadCustomRulesToParser(parser);
     final systemSms = await SmsUtil.readSmsByTimeFilter(7);
-    return process(systemSms, parser, completedIds, normalizer: normalizer);
+    return process(systemSms, parser, completedIds,
+        normalizer: normalizer, fallback: fallback);
   }
 
   static Future<ProcessResult> process(
@@ -49,6 +52,7 @@ class SmsProcessor {
     SmsParser parser,
     List<String> completedIds, {
     AddressNormalizer? normalizer,
+    SmsFallbackExtractor? fallback,
   }) async {
     final successful = <SmsData>[];
     final failed = <SmsModel>[];
@@ -70,6 +74,19 @@ class SmsProcessor {
       } else {
         failed.add(sms);
       }
+    }
+
+    // LLM 兜底：正则失败的短信尝试提取，恢复的移出 failed 并入成功流（走同一分组管线）。
+    // 提取失败/异常一律降级为现状，不影响主流程。
+    if (fallback != null && failed.isNotEmpty) {
+      try {
+        final recovered = await fallback.extractFailed(List.of(failed));
+        if (recovered.isNotEmpty) {
+          final recoveredIds = recovered.map((s) => s.sms.id).toSet();
+          failed.removeWhere((sms) => recoveredIds.contains(sms.id));
+          successful.addAll(recovered);
+        }
+      } catch (_) {}
     }
 
     // 地址归一化：只对解析成功的地址做，failed 列表逻辑不变
@@ -126,6 +143,7 @@ class SmsProcessor {
           id: smsData.id,
           isCompleted: isCompleted,
           lockerNumber: smsData.lockerNumber,
+          extractedByLlm: smsData.extractedByLlm,
         );
       }).toList();
 

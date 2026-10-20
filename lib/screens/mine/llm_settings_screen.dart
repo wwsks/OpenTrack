@@ -169,7 +169,7 @@ class _LlmSettingsScreenState extends ConsumerState<LlmSettingsScreen> {
             _buildFeatureIntro(),
             const SizedBox(height: 16),
             Text(
-              '地址、取件码与物流轨迹等数据将发送至你配置的模型服务，请谨慎选择服务提供方。'
+              '地址、取件码、短信内容与物流轨迹等数据将发送至你配置的模型服务，请谨慎选择服务提供方。'
               '不发送手机号、快递单号、快递100 API Key 及用户任何身份信息。',
               style: TextStyle(
                 color: AppTheme.textSecondary(context),

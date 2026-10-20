@@ -13,6 +13,7 @@ import '../../providers/settings_provider.dart';
 import '../../services/llm_service.dart';
 import '../../utils/address_normalizer.dart';
 import '../../utils/llm_prompts.dart';
+import '../../utils/sms_fallback_extractor.dart';
 import '../../utils/sms_parser.dart';
 import '../../utils/sms_processor.dart';
 import '../../utils/sms_util.dart';
@@ -130,18 +131,22 @@ class _PickupScreenState extends ConsumerState<PickupScreen> {
       // 否则冷启动首次加载会读到加载前的默认态而漏掉归一化。
       await ref.read(llmSettingsProvider.notifier).loaded;
       AddressNormalizer? normalizer;
+      SmsFallbackExtractor? fallback;
       final llm = ref.read(llmServiceProvider);
       if (llm != null) {
         normalizer = LlmAddressNormalizer(
           llm: llm,
           storage: ref.read(storageServiceProvider),
         );
+        // 正则解析失败的短信交给 LLM 兜底提取（失败降级为现状）
+        fallback = LlmSmsFallbackExtractor(llm: llm);
       }
 
       final result = await SmsProcessor.loadAndProcess(
         parser: _parser,
         completedIds: completedIds,
         normalizer: normalizer,
+        fallback: fallback,
       );
 
       List<ParcelData> parcels = result.parcels;
@@ -192,6 +197,13 @@ class _PickupScreenState extends ConsumerState<PickupScreen> {
       appBar: AppBar(
         title: const Text('取件码'),
         actions: [
+          // 「生成取件清单」入口（大模型已配置时显示）
+          if (ref.watch(llmSettingsProvider).isConfigured)
+            IconButton(
+              icon: const Icon(Icons.checklist),
+              tooltip: '生成取件清单',
+              onPressed: _showPickupListSheet,
+            ),
           if (!_isLoading && _hasPermission)
             PopupMenuButton<String>(
               icon: const Icon(Icons.analytics_outlined),
@@ -253,26 +265,7 @@ class _PickupScreenState extends ConsumerState<PickupScreen> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          Expanded(child: _buildBody()),
-          // 「生成取件清单」走主按钮体系（渐变主按钮 + PressableCard 反馈），
-          // 常驻页面底部、大模型已配置时可见（可用性与原 AppBar 入口一致）
-          if (ref.watch(llmSettingsProvider).isConfigured)
-            SafeArea(
-              top: false,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(AppTheme.spacePage,
-                    AppTheme.spaceRow, AppTheme.spacePage, 0),
-                child: AppTheme.primaryButton(
-                  label: '生成取件清单',
-                  icon: Icons.checklist,
-                  onTap: _showPickupListSheet,
-                ),
-              ),
-            ),
-        ],
-      ),
+      body: _buildBody(),
     );
   }
 
