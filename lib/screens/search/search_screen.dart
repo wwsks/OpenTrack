@@ -246,6 +246,39 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               duration: const Duration(milliseconds: 300),
               curve: Curves.easeOutCubic,
               child: SegmentedButton<bool>(
+                // 选中态不填充整块按钮：仅文字/图标变主题色并加粗，无勾选角标
+                showSelectedIcon: false,
+                style: ButtonStyle(
+                  backgroundColor: const WidgetStatePropertyAll(Colors.transparent),
+                  foregroundColor: WidgetStateProperty.resolveWith(
+                    (states) => states.contains(WidgetState.selected)
+                        ? (Theme.of(context).brightness == Brightness.dark
+                            ? AppTheme.primaryDark
+                            : AppTheme.primaryBlue)
+                        : (Theme.of(context).brightness == Brightness.dark
+                            ? AppTheme.darkTextSecondary
+                            : AppTheme.lightTextSecondary),
+                  ),
+                  textStyle: WidgetStateProperty.resolveWith(
+                    (states) => TextStyle(
+                      fontSize: 14,
+                      fontWeight: states.contains(WidgetState.selected)
+                          ? FontWeight.w700
+                          : FontWeight.w500,
+                    ),
+                  ),
+                  side: WidgetStatePropertyAll(BorderSide(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? AppTheme.darkDivider
+                        : AppTheme.lightDivider,
+                    width: AppTheme.hairline,
+                  )),
+                  shape: const WidgetStatePropertyAll(
+                    RoundedRectangleBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(12)),
+                    ),
+                  ),
+                ),
                 segments: const [
                   ButtonSegment(value: false, label: Text('单个查询'), icon: Icon(Icons.search)),
                   ButtonSegment(value: true, label: Text('批量查询'), icon: Icon(Icons.playlist_add)),

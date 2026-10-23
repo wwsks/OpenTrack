@@ -189,12 +189,18 @@ class AppTheme {
         ),
         contentTextStyle: const TextStyle(fontSize: 14),
       ),
-      // 开关统一用主题色（浅色 primaryBlue）：选中态拇指取主题色，其余状态走默认
+      // 开关选中态不填充整块轨道：轨道浅染主题色，拇指实色主题色（全部开关统一）
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith(
           (states) =>
               states.contains(WidgetState.selected) ? primaryBlue : null,
         ),
+        trackColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected)
+              ? primaryBlue.withValues(alpha: 0.22)
+              : lightTextSecondary.withValues(alpha: 0.22),
+        ),
+        trackOutlineColor: const WidgetStatePropertyAll(Colors.transparent),
       ),
       tabBarTheme: const TabBarTheme(
         labelColor: primaryBlue,
@@ -336,12 +342,18 @@ class AppTheme {
         ),
         contentTextStyle: const TextStyle(fontSize: 14),
       ),
-      // 开关统一用主题色（深色 primaryDark）：选中态拇指取主题色，其余状态走默认
+      // 开关选中态不填充整块轨道：轨道浅染主题色，拇指实色主题色（全部开关统一）
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith(
           (states) =>
               states.contains(WidgetState.selected) ? primaryDark : null,
         ),
+        trackColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected)
+              ? primaryDark.withValues(alpha: 0.30)
+              : darkTextSecondary.withValues(alpha: 0.25),
+        ),
+        trackOutlineColor: const WidgetStatePropertyAll(Colors.transparent),
       ),
       tabBarTheme: const TabBarTheme(
         labelColor: primaryDark,
